@@ -12,5 +12,10 @@ All notable changes will be documented here. The project intends to follow
   compatibility contract.
 - Added the unreleased `0.0.0.dev0` src-layout package scaffold, explicit theme
   package data, installed-resource API, generic example, tests, and CI evidence.
+- Implemented the THEME-003 semantic light and dark palettes, unconditional
+  light first-visit behavior, exception-safe saved user choice, accessible
+  native-button toggle, light print fallback, computed contrast gates, and an
+  isolated Chromium screenshot workflow.
 
-No final visual theme, tag, or published release exists.
+No reusable site shell, real-site visual acceptance, tag, or published release
+exists.

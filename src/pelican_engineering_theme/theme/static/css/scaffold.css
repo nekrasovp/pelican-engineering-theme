@@ -1,14 +1,90 @@
-/* Minimal structural scaffold. Visual design belongs to later milestones. */
+/* Semantic color-mode scaffold. Public tokens are frozen in customization-v1. */
 :root {
+  color-scheme: light;
+
+  --pet-color-bg: #f7f8f3;
+  --pet-color-surface: #ffffff;
+  --pet-color-surface-muted: #e9eee5;
+  --pet-color-text: #162018;
+  --pet-color-text-muted: #59645d;
+  --pet-color-border: #6f7a72;
+  --pet-color-accent: #b8f35d;
+  --pet-color-accent-contrast: #162018;
+  --pet-color-link: #315f00;
+  --pet-color-focus: #365f00;
+
+  --pet-color-code-bg: #e9eee5;
+  --pet-color-code-text: #162018;
+  --pet-color-code-border: #6f7a72;
+  --pet-color-code-highlight: #d9f7aa;
+  --pet-color-notice-info-bg: #e8f1f7;
+  --pet-color-notice-info-border: #527184;
+  --pet-color-notice-info-text: #1d3f53;
+  --pet-color-notice-success-bg: #e5f1e7;
+  --pet-color-notice-success-border: #4f7959;
+  --pet-color-notice-success-text: #1f4a2a;
+  --pet-color-notice-warning-bg: #f9f0d8;
+  --pet-color-notice-warning-border: #7a6933;
+  --pet-color-notice-warning-text: #4b3b0c;
+  --pet-color-notice-danger-bg: #f6e8e7;
+  --pet-color-notice-danger-border: #8a5652;
+  --pet-color-notice-danger-text: #5e2825;
+  --pet-color-shadow: #162018;
+  --pet-color-header-backdrop: rgb(247 248 243 / 94%);
+  --pet-shadow-surface: 0 0.25rem 1rem rgb(22 32 24 / 12%);
+
   --pet-font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --pet-font-mono: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  --pet-line-height-body: 1.65;
+  --pet-content-width: 72rem;
+  --pet-space-unit: 0.5rem;
+  --pet-radius: 0.25rem;
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+
+  --pet-color-bg: #101712;
+  --pet-color-surface: #18221b;
+  --pet-color-surface-muted: #233026;
+  --pet-color-text: #edf4ea;
+  --pet-color-text-muted: #b3c0b5;
+  --pet-color-border: #89978b;
+  --pet-color-accent: #b8f35d;
+  --pet-color-accent-contrast: #162018;
+  --pet-color-link: #c3f879;
+  --pet-color-focus: #cdfb83;
+
+  --pet-color-code-bg: #080d0a;
+  --pet-color-code-text: #eef5eb;
+  --pet-color-code-border: #89978b;
+  --pet-color-code-highlight: #263b20;
+  --pet-color-notice-info-bg: #182d38;
+  --pet-color-notice-info-border: #86acc0;
+  --pet-color-notice-info-text: #d8eef7;
+  --pet-color-notice-success-bg: #193322;
+  --pet-color-notice-success-border: #7bab85;
+  --pet-color-notice-success-text: #dcf0df;
+  --pet-color-notice-warning-bg: #362f19;
+  --pet-color-notice-warning-border: #b8a057;
+  --pet-color-notice-warning-text: #f6e8bc;
+  --pet-color-notice-danger-bg: #3b2423;
+  --pet-color-notice-danger-border: #c48b86;
+  --pet-color-notice-danger-text: #f7dfdd;
+  --pet-color-shadow: #000000;
+  --pet-color-header-backdrop: rgb(16 23 18 / 94%);
+  --pet-shadow-surface: 0 0.25rem 1rem rgb(0 0 0 / 32%);
 }
 
 html {
+  background: var(--pet-color-bg);
   font-family: var(--pet-font-sans);
+  line-height: var(--pet-line-height-body);
 }
 
 body {
+  background: var(--pet-color-bg);
+  color: var(--pet-color-text);
   margin: 0;
 }
 
@@ -16,11 +92,161 @@ body > header,
 body > main,
 body > footer {
   margin-inline: auto;
-  max-width: 72rem;
-  padding: 1rem;
+  max-width: var(--pet-content-width);
+  padding: calc(var(--pet-space-unit) * 2);
+}
+
+body > header {
+  align-items: center;
+  background: var(--pet-color-header-backdrop);
+  border-bottom: 1px solid var(--pet-color-border);
+  display: flex;
+  gap: calc(var(--pet-space-unit) * 2);
+  justify-content: space-between;
+}
+
+body > main {
+  padding-block: calc(var(--pet-space-unit) * 4);
+}
+
+body > footer {
+  border-top: 1px solid var(--pet-color-border);
+  color: var(--pet-color-text-muted);
+}
+
+a {
+  color: var(--pet-color-link);
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.16em;
+}
+
+a:hover {
+  text-decoration-thickness: 0.14em;
+}
+
+:focus-visible {
+  outline: 3px solid var(--pet-color-focus);
+  outline-offset: 3px;
 }
 
 code,
 pre {
   font-family: var(--pet-font-mono);
+}
+
+code {
+  background: var(--pet-color-code-bg);
+  border: 1px solid var(--pet-color-code-border);
+  border-radius: var(--pet-radius);
+  color: var(--pet-color-code-text);
+  padding: 0.08em 0.28em;
+}
+
+pre {
+  background: var(--pet-color-code-bg);
+  border: 1px solid var(--pet-color-code-border);
+  border-radius: var(--pet-radius);
+  box-shadow: var(--pet-shadow-surface);
+  color: var(--pet-color-code-text);
+  overflow-x: auto;
+  padding: calc(var(--pet-space-unit) * 2);
+}
+
+pre code {
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+
+.hll {
+  background: var(--pet-color-code-highlight);
+}
+
+.pet-theme-toggle {
+  background: var(--pet-color-accent);
+  border: 2px solid var(--pet-color-accent-contrast);
+  border-radius: var(--pet-radius);
+  color: var(--pet-color-accent-contrast);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 650;
+  min-block-size: 2.75rem;
+  padding: var(--pet-space-unit) calc(var(--pet-space-unit) * 1.5);
+}
+
+.pet-notice {
+  background: var(--pet-color-notice-info-bg);
+  border-inline-start: 0.25rem solid var(--pet-color-notice-info-border);
+  color: var(--pet-color-notice-info-text);
+  padding: calc(var(--pet-space-unit) * 2);
+}
+
+.pet-notice--success {
+  background: var(--pet-color-notice-success-bg);
+  border-color: var(--pet-color-notice-success-border);
+  color: var(--pet-color-notice-success-text);
+}
+
+.pet-notice--warning {
+  background: var(--pet-color-notice-warning-bg);
+  border-color: var(--pet-color-notice-warning-border);
+  color: var(--pet-color-notice-warning-text);
+}
+
+.pet-notice--danger {
+  background: var(--pet-color-notice-danger-bg);
+  border-color: var(--pet-color-notice-danger-border);
+  color: var(--pet-color-notice-danger-text);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pet-theme-toggle {
+    transition: background-color 120ms ease, color 120ms ease;
+  }
+}
+
+@media print {
+  :root,
+  html[data-theme="dark"] {
+    color-scheme: light;
+
+    --pet-color-bg: #ffffff;
+    --pet-color-surface: #ffffff;
+    --pet-color-surface-muted: #f2f2f2;
+    --pet-color-text: #000000;
+    --pet-color-text-muted: #333333;
+    --pet-color-border: #555555;
+    --pet-color-accent: #ffffff;
+    --pet-color-accent-contrast: #000000;
+    --pet-color-link: #000000;
+    --pet-color-focus: #000000;
+    --pet-color-code-bg: #f2f2f2;
+    --pet-color-code-text: #000000;
+    --pet-color-code-border: #555555;
+    --pet-color-code-highlight: #e6e6e6;
+    --pet-color-notice-info-bg: #ffffff;
+    --pet-color-notice-info-border: #333333;
+    --pet-color-notice-info-text: #000000;
+    --pet-color-notice-success-bg: #ffffff;
+    --pet-color-notice-success-border: #333333;
+    --pet-color-notice-success-text: #000000;
+    --pet-color-notice-warning-bg: #ffffff;
+    --pet-color-notice-warning-border: #333333;
+    --pet-color-notice-warning-text: #000000;
+    --pet-color-notice-danger-bg: #ffffff;
+    --pet-color-notice-danger-border: #333333;
+    --pet-color-notice-danger-text: #000000;
+    --pet-color-shadow: #ffffff;
+    --pet-color-header-backdrop: #ffffff;
+    --pet-shadow-surface: none;
+  }
+
+  body {
+    background: #ffffff;
+    color: #000000;
+  }
+
+  .pet-theme-toggle {
+    display: none !important;
+  }
 }

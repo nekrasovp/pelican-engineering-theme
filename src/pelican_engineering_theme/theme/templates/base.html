@@ -4,8 +4,25 @@
     {% block html_head %}
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1">
+      <meta name="theme-color" content="#f7f8f3" data-pet-theme-color>
       <title>{% block title %}{{ SITENAME }}{% endblock title %}</title>
       {% block head_meta %}{% endblock head_meta %}
+      <script data-pet-theme-loader>
+        (function () {
+          "use strict";
+          try {
+            if (localStorage.getItem("pelican-engineering-theme") === "dark") {
+              document.documentElement.dataset.theme = "dark";
+              document.querySelector("[data-pet-theme-color]").content = "#101712";
+              if (typeof performance.mark === "function") {
+                performance.mark("pet-theme-applied");
+              }
+            }
+          } catch (_error) {
+            /* Storage unavailable: the CSS light default remains authoritative. */
+          }
+        }());
+      </script>
       {% block head_styles %}
         <link rel="stylesheet" href="{{ SITEURL }}/{{ THEME_STATIC_DIR }}/css/scaffold.css">
       {% endblock head_styles %}
@@ -17,6 +34,7 @@
       <header>
         <a href="{{ SITEURL }}/">{{ SITENAME }}</a>
         {% block site_navigation %}{% endblock site_navigation %}
+        {% include "includes/theme-toggle.html" %}
       </header>
     {% endblock site_header %}
     <main>
@@ -31,6 +49,7 @@
         {% endif %}
       </footer>
     {% endblock site_footer %}
+    <script src="{{ SITEURL }}/{{ THEME_STATIC_DIR }}/js/theme.js" defer></script>
     {% block scripts %}{% endblock scripts %}
     {% block body_end %}{% endblock body_end %}
   </body>

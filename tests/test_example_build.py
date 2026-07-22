@@ -34,3 +34,10 @@ def test_minimal_example_builds(tmp_path: Path) -> None:
     assert (example / "output/index.html").is_file()
     assert (example / "output/small-technical-note.html").is_file()
     assert (example / "output/theme/css/scaffold.css").is_file()
+    assert (example / "output/theme/js/theme.js").is_file()
+
+    index = (example / "output/index.html").read_text(encoding="utf-8")
+    assert index.index("data-pet-theme-loader") < index.index('rel="stylesheet"')
+    assert 'meta name="theme-color" content="#f7f8f3"' in index
+    assert "data-pet-theme-toggle" in index
+    assert "/theme/js/theme.js" in index

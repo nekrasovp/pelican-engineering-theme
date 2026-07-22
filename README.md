@@ -1,8 +1,8 @@
 # pelican-engineering-theme
 
-> Scaffold status: an unreleased installable package exists for build and
-> compatibility validation. Final visual design, dark-mode behavior, and a
-> published distribution do not exist yet.
+> Status: the unreleased installable package includes the semantic color-mode
+> foundation. A reusable site shell, notebook presentation, real-site
+> integration, and published distribution do not exist yet.
 
 A reusable, accessibility-conscious Pelican theme for technical writers who
 publish long-form articles, code, and trusted static notebook output.
@@ -28,7 +28,7 @@ recorded in [ADR 0001](docs/decisions/0001-identity-license-and-boundaries.md).
 PyPI availability is not a reservation and must be checked again immediately
 before any future publication. This package is not published on PyPI.
 
-## Install and use the unreleased scaffold
+## Install and use the unreleased theme
 
 Build the wheel from a trusted checkout, then install that exact local artifact:
 
@@ -60,7 +60,7 @@ not work until a separately authorized PyPI publication has occurred.
 
 ## Responsibility boundary
 
-The theme will own presentation: Pelican templates, documented customization
+The theme owns presentation: Pelican templates, documented customization
 points, and static styling. A notebook reader owns `.ipynb` conversion and
 normalized notebook metadata. A consuming site owns content, routes,
 configuration, and immutable dependency pins.
@@ -79,16 +79,51 @@ The first implementation targets:
 - ordinary static hosting, including GitHub Pages.
 
 The package workflow executes all six Python/Pelican combinations. Compatibility
-is claimed for this scaffold only when that exact-head matrix is green; it is
-not a claim that the later visual theme or a release is complete.
+is claimed for the unreleased package only when that exact-head matrix is green;
+it is not a claim that a later site shell, real-site integration, or release is
+complete.
+
+## Color-mode contract
+
+Light is the unconditional first-visit default, including when the operating
+system prefers dark colors. Dark is applied only after the user explicitly
+selects it and the exact value `dark` is stored under
+`pelican-engineering-theme`. The only values written are `light` and `dark`.
+Missing, invalid, or unavailable storage safely resolves to light.
+
+The head contains a small first-party pre-paint loader before the stylesheet,
+and interaction lives in the packaged `theme/js/theme.js`. The reusable toggle
+include renders a native button with an accessible name and `aria-pressed`
+state. With JavaScript disabled the button remains hidden and the complete
+light CSS fallback remains usable. Print always uses a readable light palette.
+No palette decision uses `prefers-color-scheme`.
 
 ## Customization contract
 
-The minimal base exposes the stable template-block names and optional Pelican
-credit. CSS custom-property names and the system-font policy are frozen in
-[Customization contract v1](docs/contracts/customization-v1.md). The names are
-reserved; complete tokens, shell design, and light/dark behavior remain future
-work.
+The minimal base exposes the 12 stable template-block names and optional Pelican
+credit. All public CSS custom properties are implemented with light values on
+`:root` and color-specific dark values on `html[data-theme="dark"]`. Names,
+semantics, storage behavior, tested contrast pairs, and the system-font policy
+are documented in
+[Customization contract v1](docs/contracts/customization-v1.md). Selectors and
+internal tokens are not public API.
+
+## Browser evidence
+
+Real Chromium acceptance is isolated from the six-cell Python/Pelican matrix.
+The browser binary is a development and CI tool, not a runtime dependency:
+
+```sh
+uv sync --locked --all-groups
+uv run --locked --all-groups playwright install chromium
+PET_RUN_BROWSER=1 uv run --locked --all-groups \
+  pytest -m browser tests/test_browser_acceptance.py
+```
+
+The browser workflow uploads deterministic light and dark screenshots at
+390×844, 768×1024, and 1440×1000 together with a machine-readable case and
+pre-paint timing report. Green automation is evidence for review, not user
+visual acceptance.
 
 ## Non-goals
 

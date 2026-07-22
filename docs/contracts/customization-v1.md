@@ -1,11 +1,12 @@
 # Customization contract v1
 
 - Contract ID: `pelican-engineering-theme-customization-v1`
-- Status: blocks exposed by unreleased scaffold; visual token implementation pending
+- Status: implemented by the unreleased `0.0.0.dev0` package
 - Applies from: first `0.1.x` preview that implements the theme
 
-This document freezes the initial public names without adding templates or CSS
-in THEME-001.
+This document freezes the initial public names established in THEME-001 and
+records their compatible THEME-003 color-mode implementation. It does not add a
+stable layout or component-selector API.
 
 ## Stable template blocks
 
@@ -60,6 +61,73 @@ names. A rename or semantic repurposing is breaking; changing a default value
 is allowed only when contrast, visual regression, and release review pass.
 Selectors and class names are not stable unless a later document explicitly
 adds them to the public API.
+
+## Palette and persistence behavior
+
+`:root` always defines the complete light palette. Color-specific dark values
+exist only under `html[data-theme="dark"]`. The theme does not use
+`prefers-color-scheme` to select a palette: a first visit is light even when the
+operating system preference is dark.
+
+The persistence contract is exact:
+
+| Field | Contract |
+| --- | --- |
+| Storage API | `localStorage` |
+| Key | `pelican-engineering-theme` |
+| Values written | `light` or `dark` only |
+| Dark condition | Stored value is exactly `dark` |
+| Missing, invalid, or unavailable storage | Light, without an uncaught exception |
+
+A small inline loader runs in `<head>` before the stylesheet. It applies only a
+stored exact `dark` value, updates the initial `theme-color`, and otherwise
+leaves the CSS light default unchanged. The packaged first-party
+`theme/js/theme.js` owns later button interaction, DOM state, persistence, and
+`theme-color` updates. No runtime network request or third-party JavaScript is
+used.
+
+The reusable internal include `templates/includes/theme-toggle.html` contains a
+native button rather than a hidden checkbox. JavaScript reveals it only after
+initialization and maintains its accessible name and `aria-pressed` state.
+Therefore JavaScript-disabled output remains a complete light-only page without
+an inert control.
+
+`color-scheme` follows the active screen palette. Motion is added only inside
+`prefers-reduced-motion: no-preference`; reduced-motion users receive no toggle
+transition. Print overrides both screen palettes with black text on a white
+background and hides the interactive control.
+
+## Internal semantic roles
+
+The implementation also defines non-public semantic roles for code background,
+text, border, and highlight; info, success, warning, and danger notice
+background/border/text states; surface shadow; and header backdrop. Their
+current `--pet-*` spelling is an implementation detail. Consumers should rely
+only on the public table above until a later contract promotes another name.
+
+## Contrast gate
+
+Automated assertions compute WCAG contrast from the shipped hexadecimal token
+values in both light and dark palettes. Normal and meaningful text must be at
+least 4.5:1 for these pairs:
+
+- primary text / page background;
+- muted text / page background;
+- link text / page background;
+- accent-contrast button text / accent fill;
+- code text / code background;
+- info, success, warning, and danger notice text / matching notice background.
+
+Focus and meaningful UI boundaries must be at least 3:1 for these pairs:
+
+- focus / page background;
+- focus / primary surface;
+- border / page background;
+- border / primary surface;
+- code border / code background.
+
+Changing a tested token value requires the same computed gate and browser
+review. Passing the gate is not a substitute for user visual acceptance.
 
 ## Fonts and icons
 
