@@ -1,7 +1,7 @@
 # Customization contract v1
 
 - Contract ID: `pelican-engineering-theme-customization-v1`
-- Status: names reserved; implementation pending
+- Status: blocks exposed by unreleased scaffold; visual token implementation pending
 - Applies from: first `0.1.x` preview that implements the theme
 
 This document freezes the initial public names without adding templates or CSS

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the contract-only THEME-001 repository foundation."""
+"""Validate the THEME-001 contracts and THEME-002 implementation boundary."""
 
 from __future__ import annotations
 
@@ -25,14 +25,34 @@ REQUIRED_FILES = {
     ".github/ISSUE_TEMPLATE/feature.yml",
     ".github/ISSUE_TEMPLATE/config.yml",
     ".github/workflows/foundation-docs.yml",
+    ".github/workflows/package.yml",
+    "pyproject.toml",
+    "uv.lock",
+    "src/pelican_engineering_theme/__init__.py",
+    "src/pelican_engineering_theme/theme/templates/base.html",
+    "src/pelican_engineering_theme/theme/static/css/scaffold.css",
+    "examples/minimal/pelicanconf.py",
+    "examples/minimal/content/hello.md",
+    "tests/test_example_build.py",
+    "tests/test_distribution_gate.py",
 }
 
-FORBIDDEN_IMPLEMENTATION_PATHS = {
-    "pyproject.toml",
-    "src",
+FORBIDDEN_ROOT_IMPLEMENTATION_PATHS = {
+    "content",
+    "pelicanconf.py",
+    "publishconf.py",
     "templates",
     "static",
-    "tests",
+    "theme",
+}
+
+FORBIDDEN_THEME_ASSET_SUFFIXES = {
+    ".eot",
+    ".js",
+    ".otf",
+    ".ttf",
+    ".woff",
+    ".woff2",
 }
 
 REQUIRED_TEXT = {
@@ -41,7 +61,8 @@ REQUIRED_TEXT = {
         "pelican_engineering_theme",
         "Python 3.11, 3.12, and 3.13",
         "Pelican 4.11 and 4.12",
-        "No version, tag, GitHub Release, TestPyPI artifact, or PyPI artifact",
+        "0.0.0.dev0",
+        "not published on PyPI",
     ),
     "docs/decisions/0001-identity-license-and-boundaries.md": (
         "2026-07-22T08:54:24Z",
@@ -75,12 +96,15 @@ EMAIL = re.compile(r"(?<![\w.+-])[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}(?![\w.-])")
 
 
 def markdown_files() -> list[Path]:
-    return sorted(path for path in ROOT.rglob("*.md") if ".git" not in path.parts)
+    excluded = {".git", ".mypy_cache", ".pytest_cache", ".ruff_cache", ".venv", "dist"}
+    return sorted(
+        path for path in ROOT.rglob("*.md") if not excluded.intersection(path.parts)
+    )
 
 
-def tracked_text_files(errors: list[str]) -> list[Path]:
+def repository_text_files(errors: list[str]) -> list[Path]:
     result = subprocess.run(
-        ["git", "ls-files", "-z"],
+        ["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z"],
         cwd=ROOT,
         check=False,
         capture_output=True,
@@ -118,9 +142,19 @@ def validate_required_files(errors: list[str]) -> None:
 
 
 def validate_scope(errors: list[str]) -> None:
-    for relative in sorted(FORBIDDEN_IMPLEMENTATION_PATHS):
+    for relative in sorted(FORBIDDEN_ROOT_IMPLEMENTATION_PATHS):
         if (ROOT / relative).exists():
-            errors.append(f"THEME-001 must not contain implementation path: {relative}")
+            errors.append(
+                f"site-owned or non-src implementation path is forbidden: {relative}"
+            )
+
+    theme_root = ROOT / "src/pelican_engineering_theme/theme"
+    if theme_root.is_dir():
+        for path in theme_root.rglob("*"):
+            if path.is_file() and path.suffix.lower() in FORBIDDEN_THEME_ASSET_SUFFIXES:
+                errors.append(
+                    f"forbidden bundled runtime asset: {path.relative_to(ROOT)}"
+                )
 
 
 def validate_required_text(errors: list[str]) -> None:
@@ -148,14 +182,16 @@ def validate_local_links(errors: list[str]) -> None:
             try:
                 destination.relative_to(ROOT)
             except ValueError:
-                errors.append(f"{path.relative_to(ROOT)}: link escapes repository: {target}")
+                errors.append(
+                    f"{path.relative_to(ROOT)}: link escapes repository: {target}"
+                )
                 continue
             if not destination.exists():
                 errors.append(f"{path.relative_to(ROOT)}: broken local link: {target}")
 
 
 def validate_privacy(errors: list[str]) -> None:
-    for path in tracked_text_files(errors):
+    for path in repository_text_files(errors):
         text = path.read_text(encoding="utf-8")
         if EMAIL.search(text):
             errors.append(f"{path.relative_to(ROOT)}: email address is not allowed")
@@ -174,7 +210,7 @@ def main() -> int:
             print(f"ERROR: {error}")
         return 1
 
-    print("THEME-001 foundation validation passed")
+    print("THEME-001 contracts and THEME-002 boundary validation passed")
     return 0
 
 

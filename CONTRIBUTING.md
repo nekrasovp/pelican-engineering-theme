@@ -1,7 +1,7 @@
 # Contributing
 
-This repository is currently a contract-only foundation. Theme implementation
-belongs to later reviewed changes.
+This repository contains an unreleased package scaffold. Final presentation and
+behavior belong to later reviewed changes.
 
 ## Start with an issue
 
@@ -25,10 +25,17 @@ A proposed change must:
 - avoid remote fonts and bundled icon fonts in the core theme;
 - avoid importing or executing a notebook reader.
 
-Run the foundation validation before submitting a change:
+Run the locked validation before submitting a change:
 
 ```sh
-python3 scripts/validate_foundation.py
+uv sync --locked --all-groups
+uv run --locked --all-groups pytest
+uv run --locked --all-groups ruff check .
+uv run --locked --all-groups mypy
+uv run --locked --all-groups python scripts/validate_foundation.py
+uv build
+uv run --locked --all-groups python scripts/verify_distribution.py dist
 ```
 
-This policy does not imply that a package or release is available.
+Then run `scripts/verify_external_install.py` against the built wheel. These
+checks do not imply that a package or release is available from PyPI.

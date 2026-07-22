@@ -10,5 +10,7 @@ All notable changes will be documented here. The project intends to follow
 - Recorded a from-scratch, no-copy implementation boundary for the current
   vendored theme lineage and versioned the PLUGIN-003 notebook HTML fixture
   compatibility contract.
+- Added the unreleased `0.0.0.dev0` src-layout package scaffold, explicit theme
+  package data, installed-resource API, generic example, tests, and CI evidence.
 
-No theme implementation or release exists.
+No final visual theme, tag, or published release exists.
