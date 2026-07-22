@@ -32,13 +32,11 @@ def main() -> int:
     with tempfile.TemporaryDirectory(prefix="pet-wheel-proof-") as raw_temp:
         proof_root = Path(raw_temp)
         environment_path = proof_root / ".venv"
-        example_path = proof_root / "example"
         run(["uv", "venv", "--python", args.python, str(environment_path)])
 
         python_relative = "Scripts/python.exe" if os.name == "nt" else "bin/python"
         python = environment_path / python_relative
         run(["uv", "pip", "install", "--python", str(python), str(wheel)])
-        shutil.copytree(ROOT / "examples/minimal", example_path)
 
         check = (
             "import pathlib, sysconfig; "
@@ -52,34 +50,51 @@ def main() -> int:
             "print(f'theme={path}')"
         )
         run([str(python), "-I", "-c", check], cwd=proof_root)
-        run(
-            [
-                str(python),
-                "-I",
-                "-m",
-                "pelican",
-                "content",
-                "-s",
-                "pelicanconf.py",
-                "-o",
-                "output",
-            ],
-            cwd=example_path,
-        )
-        required_outputs = {
-            "index.html",
-            "small-technical-note.html",
-            "theme/css/scaffold.css",
-            "theme/js/theme.js",
-        }
-        missing = [
-            output
-            for output in sorted(required_outputs)
-            if not (example_path / "output" / output).is_file()
-        ]
-        if missing:
-            raise RuntimeError(f"external example build is missing: {missing}")
-        print("External installed-wheel example build passed")
+        for example_name, article in (
+            ("minimal", "small-technical-note.html"),
+            ("full", "configurable-shell.html"),
+        ):
+            example_path = proof_root / example_name
+            shutil.copytree(ROOT / "examples" / example_name, example_path)
+            run(
+                [
+                    str(python),
+                    "-I",
+                    "-m",
+                    "pelican",
+                    "content",
+                    "-s",
+                    "pelicanconf.py",
+                    "-o",
+                    "output",
+                ],
+                cwd=example_path,
+            )
+            required_outputs = {
+                "index.html",
+                article,
+                "theme/css/scaffold.css",
+                "theme/js/theme.js",
+            }
+            missing = [
+                output
+                for output in sorted(required_outputs)
+                if not (example_path / "output" / output).is_file()
+            ]
+            if missing:
+                raise RuntimeError(
+                    f"external {example_name} build is missing: {missing}"
+                )
+            run(
+                [
+                    str(python),
+                    "-I",
+                    str(ROOT / "scripts/validate_shell.py"),
+                    str(example_path / "output"),
+                ],
+                cwd=proof_root,
+            )
+            print(f"External installed-wheel {example_name} build passed")
 
     return 0
 

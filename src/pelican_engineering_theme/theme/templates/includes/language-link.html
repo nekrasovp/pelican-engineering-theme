@@ -1,0 +1,8 @@
+{% set pet_language_links = ENGINEERING_THEME_LANGUAGE_LINKS | default((), true) | selectattr('label') | selectattr('url') | list %}
+{% for item in pet_language_links %}
+  <a
+    class="pet-language-link"
+    href="{{ item.url | e }}"
+    {% if item.lang | default('') %}hreflang="{{ item.lang | e }}"{% endif %}
+  >{{ item.label | e }}</a>
+{% endfor %}

@@ -1,0 +1,5 @@
+{% set pet_brand_label = ENGINEERING_THEME_BRAND_LABEL | default(SITENAME, true) %}
+{% set pet_brand_url = ENGINEERING_THEME_BRAND_URL | default(SITEURL ~ '/', true) %}
+{% if pet_brand_label %}
+  <a class="pet-brand" href="{{ pet_brand_url | e }}">{{ pet_brand_label | e }}</a>
+{% endif %}

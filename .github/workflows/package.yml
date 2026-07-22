@@ -100,6 +100,8 @@ jobs:
             dist/*.whl
             dist/*.tar.gz
             examples/minimal/**
+            examples/full/**
+            scripts/validate_shell.py
           if-no-files-found: error
           retention-days: 7
 
@@ -119,7 +121,7 @@ jobs:
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: install-proof-input
-      - name: Install only the wheel and copy the generic example
+      - name: Install only the wheel and copy the generic examples
         shell: bash
         run: |
           proof_root="${RUNNER_TEMP}/pet-external-proof"
@@ -128,7 +130,7 @@ jobs:
           wheel=(dist/*.whl)
           test "${#wheel[@]}" -eq 1
           uv pip install --python "${proof_python}" "${wheel[0]}"
-          cp -R examples/minimal "${proof_root}/example"
+          cp -R examples "${proof_root}/examples"
       - name: Prove the import comes from site-packages
         shell: bash
         run: |
@@ -148,18 +150,25 @@ jobs:
           print(f"import={module}")
           print(f"theme={theme.get_theme_path()}")
           PY
-      - name: Build from the installed wheel outside the checkout
+      - name: Build both fixtures from the installed wheel outside the checkout
         shell: bash
         run: |
+          artifact_root="$PWD"
           proof_root="${RUNNER_TEMP}/pet-external-proof"
           proof_python="${proof_root}/.venv/bin/python"
-          cd "${proof_root}/example"
-          env -u PYTHONPATH "${proof_python}" -I -m pelican content \
-            -s pelicanconf.py -o output
-          test -f output/index.html
-          test -f output/small-technical-note.html
-          test -f output/theme/css/scaffold.css
-          test -f output/theme/js/theme.js
+          for example in minimal full; do
+            cd "${proof_root}/examples/${example}"
+            env -u PYTHONPATH "${proof_python}" -I -m pelican content \
+              -s pelicanconf.py -o output
+            test -f output/index.html
+            test -f output/theme/css/scaffold.css
+            test -f output/theme/js/theme.js
+          done
+          test -f "${proof_root}/examples/minimal/output/small-technical-note.html"
+          test -f "${proof_root}/examples/full/output/configurable-shell.html"
+          "${proof_python}" -I "${artifact_root}/scripts/validate_shell.py" \
+            "${proof_root}/examples/minimal/output" \
+            "${proof_root}/examples/full/output"
 
   clean-sdist:
     name: Clean unpacked-sdist tests

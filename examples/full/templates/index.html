@@ -1,0 +1,8 @@
+{% extends "!theme/index.html" %}
+{% block head_meta %}{{ super() }}<meta name="description" content="Child-template metadata override fixture">{% endblock head_meta %}
+{% block canonical %}<link rel="canonical" href="https://example.test/">{% endblock canonical %}
+{% block structured_data %}<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"Generic Systems Journal"}</script>{% endblock structured_data %}
+{% block body_class %}{{ super() }} pet-fixture-body{% endblock body_class %}
+{% block page_class %}{{ super() }} pet-fixture-page{% endblock page_class %}
+{% block hero %}<div class="pet-status-notice"><p>Child-template hero override fixture.</p></div>{% endblock hero %}
+{% block scripts %}{{ super() }}<script type="application/json" id="fixture-script">{"ready":true}</script>{% endblock scripts %}

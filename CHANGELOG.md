@@ -16,6 +16,13 @@ All notable changes will be documented here. The project intends to follow
   light first-visit behavior, exception-safe saved user choice, accessible
   native-button toggle, light print fallback, computed contrast gates, and an
   isolated Chromium screenshot workflow.
+- Implemented the THEME-004 semantic document shell, owned reusable includes,
+  standard `MENUITEMS` navigation, optional brand/language/footer settings,
+  working skip target, wrapping responsive layout, generic content styles, and
+  18 stable child-template blocks.
+- Added minimal and full installed-wheel fixtures, strict generated-shell and
+  distribution inventories, keyboard/overflow/no-network browser checks, and a
+  locked development-only axe-core accessibility scan.
 
-No reusable site shell, real-site visual acceptance, tag, or published release
-exists.
+No final article/taxonomy templates, real-site visual acceptance, tag, or
+published release exists.

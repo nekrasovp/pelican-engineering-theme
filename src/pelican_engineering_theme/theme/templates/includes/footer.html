@@ -1,0 +1,10 @@
+{% set pet_footer_text = ENGINEERING_THEME_FOOTER_TEXT | default('', true) %}
+{% set pet_show_credit = ENGINEERING_THEME_SHOW_PELICAN_CREDIT | default(false) %}
+{% if pet_footer_text or pet_show_credit %}
+  <footer class="pet-site-footer">
+    <div class="pet-container pet-site-footer__inner">
+      {% if pet_footer_text %}<p>{{ pet_footer_text | e }}</p>{% endif %}
+      {% if pet_show_credit %}<a href="https://getpelican.com/">Built with Pelican</a>{% endif %}
+    </div>
+  </footer>
+{% endif %}
