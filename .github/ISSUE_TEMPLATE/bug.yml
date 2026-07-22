@@ -1,0 +1,42 @@
+name: Bug report
+description: Report a reproducible problem in a documented or released theme behavior.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: Do not include secrets, private material, or vulnerability details.
+  - type: input
+    id: version
+    attributes:
+      label: Theme version or commit
+      placeholder: No release exists yet; use a commit SHA when applicable.
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Python and Pelican versions
+      placeholder: Python 3.12, Pelican 4.12
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Use generic content and list exact steps.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true

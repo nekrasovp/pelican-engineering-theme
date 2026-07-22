@@ -1,0 +1,37 @@
+name: Feature request
+description: Propose a reusable theme capability or contract change.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Reusable problem
+      description: Explain the publisher need without personal-site content.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+    validations:
+      required: true
+  - type: dropdown
+    id: owner
+    attributes:
+      label: Responsibility owner
+      options:
+        - Theme presentation
+        - Notebook reader conversion or metadata
+        - Consuming site content, routes, configuration, or pins
+        - Unsure
+    validations:
+      required: true
+  - type: textarea
+    id: compatibility
+    attributes:
+      label: Contract and compatibility impact
+      description: Note affected blocks, tokens, settings, markup, licenses, or privacy behavior.
+    validations:
+      required: true
