@@ -1,32 +1,29 @@
 # Contributing
 
-This repository contains an unreleased theme package with a reusable shell,
-content templates, and static notebook presentation. Real-site integration and
-publication belong to later separately reviewed changes.
+The `0.1.0` package is a release candidate, not a published distribution.
+Contributions must preserve the generic theme boundary and must not imply that
+PyPI, a production site, or a visual design has been accepted.
 
-## Start with an issue
+## Before opening a change
 
-Use the public issue templates for a reproducible bug, accessibility problem,
-or feature request. GitHub Discussions are intentionally disabled. Do not put
-secrets, private company material, personal data, or embargoed vulnerability
-details in an issue.
+Use the public issue templates for reproducible bugs, accessibility problems,
+or feature requests. Do not put secrets, personal data, private company
+material, or embargoed vulnerability details in an issue. Follow
+[SECURITY.md](SECURITY.md) for sensitive reports.
 
-For security-sensitive reports, follow [SECURITY.md](SECURITY.md).
+A change must:
 
-## Change requirements
+- keep content, routes, analytics, publisher identity, and deployment outside
+  the package;
+- preserve the from-scratch/no-copy and third-party intake policy;
+- preserve exact-source, privacy, deterministic-build, and no-runtime-network
+  gates;
+- identify changes to public settings, blocks, CSS tokens, or notebook markup
+  and apply the [version policy](docs/versioning.md);
+- never import or execute a notebook reader;
+- add provenance and license evidence before any third-party asset or fixture.
 
-A proposed change must:
-
-- keep the theme reusable and free of site-specific content or configuration;
-- preserve the theme/reader/site responsibility boundary in [README.md](README.md);
-- identify breaking changes to documented blocks, settings, CSS tokens, or
-  notebook markup and apply the version policy;
-- include provenance and license evidence before adding any third-party code,
-  font, icon, image, fixture, or other asset;
-- avoid remote fonts and bundled icon fonts in the core theme;
-- avoid importing or executing a notebook reader.
-
-Run the locked validation before submitting a change:
+## Locked validation
 
 ```sh
 uv sync --locked --all-groups
@@ -34,21 +31,31 @@ uv run --locked --all-groups pytest
 uv run --locked --all-groups ruff check .
 uv run --locked --all-groups mypy
 uv run --locked --all-groups python scripts/validate_foundation.py
+uv run --locked --all-groups python scripts/validate_docs.py --external
+uv run --locked --all-groups python scripts/validate_release_policy.py
 uv build
 uv run --locked --all-groups python scripts/verify_distribution.py dist
 ```
 
-Then run `scripts/verify_external_install.py` against the built wheel. These
-checks do not imply that a package or release is available from PyPI.
+Run `scripts/verify_external_install.py` against the built wheel and
+`scripts/verify_readme_onboarding.py` separately against the wheel and sdist.
+These checks prove exact local/CI candidate artifacts; they are not PyPI tests.
 
-Color-mode changes also require the isolated real-browser proof:
+Presentation changes also require:
 
 ```sh
+npm ci --ignore-scripts
 uv run --locked --all-groups playwright install chromium
 PET_RUN_BROWSER=1 uv run --locked --all-groups \
   pytest -m browser tests/test_browser_acceptance.py
 ```
 
-Chromium is a development/CI dependency and must not become a theme runtime
-dependency. Review the generated screenshots at their original resolution;
-browser-green remains executor evidence rather than user visual acceptance.
+Review screenshots at original resolution. Browser-green and axe-green are
+technical evidence, not user visual acceptance.
+
+## Dependency and release changes
+
+Follow [the dependency-update policy](docs/dependency-updates.md); never loosen
+an exact action pin or archive inventory casually. Release workflow changes
+must retain negative policy tests. Publication remains a separate manual,
+protected-environment action documented in [the release guide](docs/releasing.md).

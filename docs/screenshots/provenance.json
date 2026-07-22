@@ -1,0 +1,65 @@
+{
+  "candidate_only": true,
+  "capture_tool": "playwright 1.61.0 / Chromium 149.0.7827.55",
+  "captures": [
+    {
+      "bytes": 113768,
+      "file": "home-light.png",
+      "route": "/",
+      "sha256": "c9a27d37ffbc623f661d49514493026a8690022ee7047788ea460ebbd6eacc19",
+      "theme": "light",
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      }
+    },
+    {
+      "bytes": 113774,
+      "file": "home-dark.png",
+      "route": "/",
+      "sha256": "a0034018424b7c63c4c5256bc67bbd94724362e5618b5f9531fb9696d97c095e",
+      "theme": "dark",
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      }
+    },
+    {
+      "bytes": 74971,
+      "file": "article-light.png",
+      "route": "/configurable-shell.html",
+      "sha256": "f56e8cfab615e706c0b25bc1f680f8e37f98ba8de44e9eac3e6d69b935b7c323",
+      "theme": "light",
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      }
+    },
+    {
+      "bytes": 80316,
+      "file": "archive-light.png",
+      "route": "/archives.html",
+      "sha256": "05e9f469ff1347dec805051d3e025c0a3c1c3d138f5466ca10d5796f26f0f542",
+      "theme": "light",
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      }
+    },
+    {
+      "bytes": 99545,
+      "file": "notebook-dark.png",
+      "route": "/notebook-presentation.html",
+      "sha256": "af3d3ee6f8ca55b9de2810f8f9092b263676a3e06e9a2ce24e2edf85cb289485",
+      "theme": "dark",
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      }
+    }
+  ],
+  "runtime_network_requests": 0,
+  "schema_version": 1,
+  "source_kind": "first-party-generic-example",
+  "source_tree_sha256": "bc8955d8d84909c7156dec532ecd03ed367e13e2dc718bb04e830d43b4eb0c47"
+}

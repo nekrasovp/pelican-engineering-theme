@@ -4,24 +4,33 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pelican-engineering-theme"
-version = "0.0.0.dev0"
+version = "0.1.0"
 description = "A reusable, accessibility-conscious Pelican theme for technical writers."
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
+keywords = ["pelican", "theme", "technical-writing", "jupyter", "accessibility"]
 dependencies = [
   "pelican[markdown]>=4.11,<4.13",
 ]
 classifiers = [
-  "Development Status :: 2 - Pre-Alpha",
+  "Development Status :: 3 - Alpha",
+  "Environment :: Web Environment",
   "Framework :: Pelican",
+  "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Topic :: Internet :: WWW/HTTP :: Site Management",
+  "Topic :: Text Processing :: Markup :: HTML",
 ]
 
 [project.urls]
+Changelog = "https://github.com/nekrasovp/pelican-engineering-theme/blob/main/CHANGELOG.md"
+Documentation = "https://github.com/nekrasovp/pelican-engineering-theme/tree/main/docs"
+Source = "https://github.com/nekrasovp/pelican-engineering-theme"
 Repository = "https://github.com/nekrasovp/pelican-engineering-theme"
 Issues = "https://github.com/nekrasovp/pelican-engineering-theme/issues"
 

@@ -13,9 +13,29 @@ from pathlib import Path
 
 NAME = "pelican-engineering-theme"
 NORMALIZED_NAME = "pelican_engineering_theme"
-VERSION = "0.0.0.dev0"
+VERSION = "0.1.0"
 PACKAGE = "pelican_engineering_theme"
 LICENSE_SHA256 = "36deab88361eb4a1ae20f2d94764a7f734e3902ee79865726be944b0b6d316ab"
+EXPECTED_PROJECT_URLS = [
+    "Changelog, https://github.com/nekrasovp/pelican-engineering-theme/blob/main/CHANGELOG.md",
+    "Documentation, https://github.com/nekrasovp/pelican-engineering-theme/tree/main/docs",
+    "Source, https://github.com/nekrasovp/pelican-engineering-theme",
+    "Repository, https://github.com/nekrasovp/pelican-engineering-theme",
+    "Issues, https://github.com/nekrasovp/pelican-engineering-theme/issues",
+]
+EXPECTED_CLASSIFIERS = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Web Environment",
+    "Framework :: Pelican",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Internet :: WWW/HTTP :: Site Management",
+    "Topic :: Text Processing :: Markup :: HTML",
+]
 
 REQUIRED_PACKAGE_FILES = {
     f"{PACKAGE}/__init__.py",
@@ -55,6 +75,7 @@ REQUIRED_SDIST_SUPPORT_FILES = {
     ".github/workflows/browser.yml",
     ".github/workflows/foundation-docs.yml",
     ".github/workflows/package.yml",
+    ".github/workflows/release.yml",
     "CHANGELOG.md",
     "CONTRIBUTING.md",
     "LICENSES/Apache-2.0.txt",
@@ -67,6 +88,23 @@ REQUIRED_SDIST_SUPPORT_FILES = {
     "docs/contracts/notebook-html-v1.md",
     "docs/decisions/0001-identity-license-and-boundaries.md",
     "docs/third-party-and-assets.md",
+    "docs/accessibility.md",
+    "docs/compatibility.md",
+    "docs/configuration.md",
+    "docs/customization.md",
+    "docs/dependency-updates.md",
+    "docs/deployment.md",
+    "docs/notebooks.md",
+    "docs/release-notes/0.1.0.md",
+    "docs/releasing.md",
+    "docs/screenshots/README.md",
+    "docs/screenshots/archive-light.png",
+    "docs/screenshots/article-light.png",
+    "docs/screenshots/home-dark.png",
+    "docs/screenshots/home-light.png",
+    "docs/screenshots/notebook-dark.png",
+    "docs/screenshots/provenance.json",
+    "docs/versioning.md",
     "examples/minimal/content/hello.md",
     "examples/minimal/pelicanconf.py",
     "examples/full/content/hello.md",
@@ -89,9 +127,14 @@ REQUIRED_SDIST_SUPPORT_FILES = {
     "scripts/validate_notebook_contract.py",
     "scripts/validate_content.py",
     "scripts/validate_shell.py",
+    "scripts/capture_readme_screenshots.py",
+    "scripts/release_candidate.py",
+    "scripts/validate_docs.py",
+    "scripts/validate_release_policy.py",
     "scripts/verify_clean_sdist.py",
     "scripts/verify_distribution.py",
     "scripts/verify_external_install.py",
+    "scripts/verify_readme_onboarding.py",
     "tests/__init__.py",
     "tests/site_build.py",
     "tests/test_ci_exact_head.py",
@@ -104,6 +147,7 @@ REQUIRED_SDIST_SUPPORT_FILES = {
     "tests/test_example_build.py",
     "tests/test_shell_contract.py",
     "tests/test_theme_package.py",
+    "tests/test_release_preparation.py",
 }
 WHEEL_METADATA_FILES = {
     f"{NORMALIZED_NAME}-{VERSION}.dist-info/METADATA",
@@ -130,9 +174,9 @@ EXPECTED_SDIST_FILES = (
 )
 
 assert len(REQUIRED_PACKAGE_FILES) == 32
-assert len(REQUIRED_SDIST_SUPPORT_FILES) == 52
+assert len(REQUIRED_SDIST_SUPPORT_FILES) == 76
 assert len(EXPECTED_WHEEL_FILES) == 37
-assert len(EXPECTED_SDIST_FILES) == 92
+assert len(EXPECTED_SDIST_FILES) == 116
 
 FORBIDDEN_WHEEL_PREFIXES = ("examples/", "node_modules/", "scripts/", "tests/")
 FORBIDDEN_WHEEL_FILES = {"package-lock.json", "package.json"}
@@ -221,12 +265,20 @@ def sdist_scope_errors(members: Iterable[str]) -> list[str]:
 
 
 def metadata_errors(raw_metadata: bytes) -> list[str]:
-    """Return exact identity, version, and license metadata errors."""
+    """Return exact release identity, compatibility, and project-link errors."""
     project_metadata = email.message_from_bytes(raw_metadata)
     expected = {
+        "Metadata-Version": "2.4",
         "Name": NAME,
         "Version": VERSION,
+        "Summary": (
+            "A reusable, accessibility-conscious Pelican theme for technical writers."
+        ),
         "License-Expression": "MIT",
+        "Requires-Python": ">=3.11",
+        "Requires-Dist": "pelican[markdown]<4.13,>=4.11",
+        "Description-Content-Type": "text/markdown",
+        "Keywords": "pelican,theme,technical-writing,jupyter,accessibility",
     }
     errors = [
         f"metadata {field} is {project_metadata.get(field)!r}, expected {value!r}"
@@ -235,6 +287,10 @@ def metadata_errors(raw_metadata: bytes) -> list[str]:
     ]
     if project_metadata.get_all("License-File") != ["LICENSE"]:
         errors.append("metadata License-File must contain only 'LICENSE'")
+    if project_metadata.get_all("Project-URL") != EXPECTED_PROJECT_URLS:
+        errors.append("metadata Project-URL values do not match the exact public links")
+    if project_metadata.get_all("Classifier") != EXPECTED_CLASSIFIERS:
+        errors.append("metadata Classifier values do not match the supported contract")
     return errors
 
 

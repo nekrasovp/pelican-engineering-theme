@@ -5,10 +5,13 @@ import tarfile
 import pytest
 
 from scripts.verify_distribution import (
+    EXPECTED_CLASSIFIERS,
+    EXPECTED_PROJECT_URLS,
     EXPECTED_SDIST_FILES,
     EXPECTED_WHEEL_FILES,
     REQUIRED_PACKAGE_FILES,
     REQUIRED_SDIST_SUPPORT_FILES,
+    metadata_errors,
     package_data_errors,
     package_inventory_errors,
     sdist_inventory_errors,
@@ -41,6 +44,24 @@ NEW_SDIST_SUPPORT_FILES = (
     ".github/workflows/browser.yml",
     ".github/workflows/foundation-docs.yml",
     ".github/workflows/package.yml",
+    ".github/workflows/release.yml",
+    "docs/accessibility.md",
+    "docs/compatibility.md",
+    "docs/configuration.md",
+    "docs/customization.md",
+    "docs/dependency-updates.md",
+    "docs/deployment.md",
+    "docs/notebooks.md",
+    "docs/release-notes/0.1.0.md",
+    "docs/releasing.md",
+    "docs/screenshots/README.md",
+    "docs/screenshots/archive-light.png",
+    "docs/screenshots/article-light.png",
+    "docs/screenshots/home-dark.png",
+    "docs/screenshots/home-light.png",
+    "docs/screenshots/notebook-dark.png",
+    "docs/screenshots/provenance.json",
+    "docs/versioning.md",
     "examples/full/content/hello.md",
     "examples/full/content/archived-interface.md",
     "examples/full/content/deprecated-protocol.md",
@@ -60,13 +81,53 @@ NEW_SDIST_SUPPORT_FILES = (
     "scripts/validate_shell.py",
     "scripts/validate_content.py",
     "scripts/validate_notebook_contract.py",
+    "scripts/capture_readme_screenshots.py",
+    "scripts/release_candidate.py",
+    "scripts/validate_docs.py",
+    "scripts/validate_release_policy.py",
+    "scripts/verify_readme_onboarding.py",
     "THIRD_PARTY.md",
     "tests/site_build.py",
     "tests/test_shell_contract.py",
     "tests/test_content_contract.py",
     "tests/fixtures/plugin003-nbconvert-basic-v1/representative.fragment.html",
     "tests/test_notebook_contract.py",
+    "tests/test_release_preparation.py",
 )
+
+
+def test_metadata_gate_rejects_wrong_public_link_and_classifier() -> None:
+    lines = [
+        "Metadata-Version: 2.4",
+        "Name: pelican-engineering-theme",
+        "Version: 0.1.0",
+        "Summary: A reusable, accessibility-conscious Pelican theme for "
+        "technical writers.",
+        "License-Expression: MIT",
+        "Requires-Python: >=3.11",
+        "Requires-Dist: pelican[markdown]<4.13,>=4.11",
+        "Description-Content-Type: text/markdown",
+        "Keywords: pelican,theme,technical-writing,jupyter,accessibility",
+        "License-File: LICENSE",
+        *(f"Project-URL: {value}" for value in EXPECTED_PROJECT_URLS),
+        *(f"Classifier: {value}" for value in EXPECTED_CLASSIFIERS),
+        "",
+        "candidate description",
+    ]
+    valid = "\n".join(lines).encode()
+    assert metadata_errors(valid) == []
+
+    invalid = valid.replace(
+        b"Source, https://github.com/nekrasovp/pelican-engineering-theme",
+        b"Source, https://example.invalid/wrong-source",
+    ).replace(
+        b"Development Status :: 3 - Alpha",
+        b"Development Status :: 5 - Production/Stable",
+    )
+
+    errors = metadata_errors(invalid)
+    assert any("Project-URL" in error for error in errors)
+    assert any("Classifier" in error for error in errors)
 
 
 def test_gate_rejects_omitted_required_template() -> None:
@@ -155,14 +216,14 @@ def test_exact_wheel_archive_rejects_arbitrary_top_level_payload() -> None:
 
 
 def test_exact_wheel_archive_rejects_missing_generated_metadata() -> None:
-    required = "pelican_engineering_theme-0.0.0.dev0.dist-info/WHEEL"
+    required = "pelican_engineering_theme-0.1.0.dist-info/WHEEL"
     assert wheel_inventory_errors(EXPECTED_WHEEL_FILES - {required}) == [
         f"missing exact wheel file: {required}"
     ]
 
 
 def test_exact_sdist_archive_rejects_arbitrary_source_payload() -> None:
-    prefix = "pelican_engineering_theme-0.0.0.dev0/"
+    prefix = "pelican_engineering_theme-0.1.0/"
     members = {f"{prefix}{member}" for member in EXPECTED_SDIST_FILES}
     members.add(f"{prefix}scratch/undeclared.txt")
     assert sdist_inventory_errors(members, prefix=prefix) == [
@@ -171,7 +232,7 @@ def test_exact_sdist_archive_rejects_arbitrary_source_payload() -> None:
 
 
 def test_exact_sdist_archive_rejects_missing_generated_metadata() -> None:
-    prefix = "pelican_engineering_theme-0.0.0.dev0/"
+    prefix = "pelican_engineering_theme-0.1.0/"
     required = "src/pelican_engineering_theme.egg-info/SOURCES.txt"
     members = {f"{prefix}{member}" for member in EXPECTED_SDIST_FILES - {required}}
     assert sdist_inventory_errors(members, prefix=prefix) == [
@@ -200,10 +261,10 @@ def test_wheel_gate_rejects_node_manifest_payload() -> None:
 
 def test_sdist_gate_rejects_installed_axe_payload() -> None:
     assert sdist_scope_errors(
-        {"pelican_engineering_theme-0.0.0.dev0/node_modules/axe-core/axe.min.js"}
+        {"pelican_engineering_theme-0.1.0/node_modules/axe-core/axe.min.js"}
     ) == [
         "installed Node dependency leaked into sdist: "
-        "pelican_engineering_theme-0.0.0.dev0/node_modules/axe-core/axe.min.js"
+        "pelican_engineering_theme-0.1.0/node_modules/axe-core/axe.min.js"
     ]
 
 
