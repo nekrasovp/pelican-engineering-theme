@@ -1,0 +1,12 @@
+{% set pet_translation_content = pet_translation_content | default(pet_content) %}
+{% set pet_translations = pet_translation_content.translations | default((), true) | selectattr('url') | selectattr('lang') | list if pet_translation_content else [] %}
+{% if pet_translations %}
+  <nav class="pet-content-translations" aria-label="Translations">
+    <span>Translations:</span>
+    <ul>
+      {% for translation in pet_translations %}
+        <li><a href="{{ (SITEURL ~ '/' ~ translation.url) | forceescape }}" hreflang="{{ translation.lang | forceescape }}" lang="{{ translation.lang | forceescape }}">{{ translation.lang | forceescape }}</a></li>
+      {% endfor %}
+    </ul>
+  </nav>
+{% endif %}

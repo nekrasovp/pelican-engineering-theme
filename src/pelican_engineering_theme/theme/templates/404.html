@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Page not found — {{ SITENAME }}{% endblock title %}
+{% block page_class %}{{ super() }} pet-error-page{% endblock page_class %}
+{% block content_header %}<h1>Page not found</h1>{% endblock content_header %}
+{% block content %}
+  <div class="pet-prose">
+    <p>The requested page could not be found.</p>
+    <p><a href="{{ ENGINEERING_THEME_BRAND_URL | default(SITEURL ~ '/', true) | forceescape }}">Return to the homepage</a></p>
+  </div>
+{% endblock content %}

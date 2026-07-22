@@ -1,0 +1,15 @@
+{% set pet_status_content = pet_status_content | default(pet_content) %}
+{% set pet_archive_notice = pet_status_content.archive_notice | default('', true) if pet_status_content else '' %}
+{% set pet_deprecated_warning = pet_status_content.deprecated_warning | default('', true) if pet_status_content else '' %}
+{% if pet_archive_notice is string and pet_archive_notice | trim %}
+  <aside class="pet-content-status pet-content-status--archive" data-content-status="archive" role="note" aria-labelledby="pet-archive-notice-title">
+    <h2 id="pet-archive-notice-title">Archived content</h2>
+    <p>{{ pet_archive_notice | forceescape }}</p>
+  </aside>
+{% endif %}
+{% if pet_deprecated_warning is string and pet_deprecated_warning | trim %}
+  <aside class="pet-content-status pet-content-status--deprecated" data-content-status="deprecated" role="note" aria-labelledby="pet-deprecated-warning-title">
+    <h2 id="pet-deprecated-warning-title">Deprecated content</h2>
+    <p>{{ pet_deprecated_warning | forceescape }}</p>
+  </aside>
+{% endif %}

@@ -1,0 +1,25 @@
+{% set pet_metadata_content = pet_metadata_content | default(article if article is defined else none) %}
+{% set pet_has_published = pet_metadata_content and pet_metadata_content.date | default(none) %}
+{% set pet_has_modified = pet_metadata_content and pet_metadata_content.modified | default(none) %}
+{% set pet_authors = pet_metadata_content.authors | default((), true) if pet_metadata_content else () %}
+{% set pet_category = pet_metadata_content.category | default(none) if pet_metadata_content else none %}
+{% set pet_tags = pet_metadata_content.tags | default((), true) if pet_metadata_content else () %}
+{% if pet_has_published or pet_has_modified or pet_authors or pet_category or pet_tags %}
+  <dl class="pet-content-metadata" aria-label="Content metadata">
+    {% if pet_has_published %}
+      <div><dt>Published</dt><dd><time datetime="{{ pet_metadata_content.date.isoformat() | e }}">{{ pet_metadata_content.locale_date | default(pet_metadata_content.date.date() | string, true) | e }}</time></dd></div>
+    {% endif %}
+    {% if pet_has_modified %}
+      <div><dt>Updated</dt><dd><time datetime="{{ pet_metadata_content.modified.isoformat() | e }}">{{ pet_metadata_content.locale_modified | default(pet_metadata_content.modified.date() | string, true) | e }}</time></dd></div>
+    {% endif %}
+    {% if pet_authors %}
+      <div><dt>By</dt><dd>{% for item in pet_authors %}<a rel="author" href="{{ (SITEURL ~ '/' ~ item.url) | forceescape }}">{{ item | forceescape }}</a>{{ ', ' if not loop.last }}{% endfor %}</dd></div>
+    {% endif %}
+    {% if pet_category %}
+      <div><dt>Category</dt><dd><a href="{{ (SITEURL ~ '/' ~ pet_category.url) | forceescape }}">{{ pet_category | forceescape }}</a></dd></div>
+    {% endif %}
+    {% if pet_tags %}
+      <div><dt>Tags</dt><dd>{% for item in pet_tags %}<a rel="tag" href="{{ (SITEURL ~ '/' ~ item.url) | forceescape }}">{{ item | forceescape }}</a>{{ ', ' if not loop.last }}{% endfor %}</dd></div>
+    {% endif %}
+  </dl>
+{% endif %}

@@ -2,9 +2,9 @@
 {% block title %}Archives — {{ SITENAME }}{% endblock title %}
 {% block content_header %}<h1>Archives</h1>{% endblock content_header %}
 {% block content %}
-  <ol>
+  {% if dates %}<ol class="pet-archive-list">
     {% for article in dates %}
-      <li><a href="{{ SITEURL }}/{{ article.url }}">{{ article.title }}</a></li>
+      <li><time datetime="{{ article.date.date().isoformat() | forceescape }}">{{ article.locale_date | forceescape }}</time> <a href="{{ (SITEURL ~ '/' ~ article.url) | forceescape }}">{{ article.title | striptags | forceescape }}</a></li>
     {% endfor %}
-  </ol>
+  </ol>{% else %}<p>No archived articles are available.</p>{% endif %}
 {% endblock content %}

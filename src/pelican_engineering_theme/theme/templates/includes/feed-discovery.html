@@ -1,0 +1,34 @@
+{% macro pet_feed_link(path, mime_type, label) -%}
+  {% if pet_siteurl_valid and path is string and path and '://' not in path and not path.startswith('//') %}
+    <link rel="alternate" type="{{ mime_type | forceescape }}" title="{{ label | forceescape }}" href="{{ (pet_siteurl.rstrip('/') ~ '/' ~ path.lstrip('/')) | forceescape }}">
+  {% endif %}
+{%- endmacro %}
+{% set pet_global_atom = FEED_ALL_ATOM | default('', true) %}
+{% set pet_global_rss = FEED_ALL_RSS | default('', true) %}
+{{ pet_feed_link(pet_global_atom, 'application/atom+xml', (SITENAME | default('Site', true)) ~ ' Atom feed') }}
+{{ pet_feed_link(pet_global_rss, 'application/rss+xml', (SITENAME | default('Site', true)) ~ ' RSS feed') }}
+{% set pet_context_atom = namespace(path='', label='') %}
+{% set pet_context_rss = namespace(path='', label='') %}
+{% if category is defined and category.slug | default('') %}
+  {% set pet_context_atom.path = (CATEGORY_FEED_ATOM | default('', true)).replace('{slug}', category.slug | string) if CATEGORY_FEED_ATOM | default('') is string else '' %}
+  {% set pet_context_rss.path = (CATEGORY_FEED_RSS | default('', true)).replace('{slug}', category.slug | string) if CATEGORY_FEED_RSS | default('') is string else '' %}
+  {% set pet_context_atom.label = (category | string) ~ ' category Atom feed' %}
+  {% set pet_context_rss.label = (category | string) ~ ' category RSS feed' %}
+{% elif tag is defined and tag.slug | default('') %}
+  {% set pet_context_atom.path = (TAG_FEED_ATOM | default('', true)).replace('{slug}', tag.slug | string) if TAG_FEED_ATOM | default('') is string else '' %}
+  {% set pet_context_rss.path = (TAG_FEED_RSS | default('', true)).replace('{slug}', tag.slug | string) if TAG_FEED_RSS | default('') is string else '' %}
+  {% set pet_context_atom.label = (tag | string) ~ ' tag Atom feed' %}
+  {% set pet_context_rss.label = (tag | string) ~ ' tag RSS feed' %}
+{% elif author is defined and author.slug | default('') %}
+  {% set pet_context_atom.path = (AUTHOR_FEED_ATOM | default('', true)).replace('{slug}', author.slug | string) if AUTHOR_FEED_ATOM | default('') is string else '' %}
+  {% set pet_context_rss.path = (AUTHOR_FEED_RSS | default('', true)).replace('{slug}', author.slug | string) if AUTHOR_FEED_RSS | default('') is string else '' %}
+  {% set pet_context_atom.label = (author | string) ~ ' author Atom feed' %}
+  {% set pet_context_rss.label = (author | string) ~ ' author RSS feed' %}
+{% elif pet_content and pet_content.lang | default('') %}
+  {% set pet_context_atom.path = (TRANSLATION_FEED_ATOM | default('', true)).replace('{lang}', pet_content.lang | string) if TRANSLATION_FEED_ATOM | default('') is string else '' %}
+  {% set pet_context_rss.path = (TRANSLATION_FEED_RSS | default('', true)).replace('{lang}', pet_content.lang | string) if TRANSLATION_FEED_RSS | default('') is string else '' %}
+  {% set pet_context_atom.label = (pet_content.lang | string) ~ ' translation Atom feed' %}
+  {% set pet_context_rss.label = (pet_content.lang | string) ~ ' translation RSS feed' %}
+{% endif %}
+{% if pet_context_atom.path != pet_global_atom %}{{ pet_feed_link(pet_context_atom.path, 'application/atom+xml', pet_context_atom.label) }}{% endif %}
+{% if pet_context_rss.path != pet_global_rss %}{{ pet_feed_link(pet_context_rss.path, 'application/rss+xml', pet_context_rss.label) }}{% endif %}

@@ -2,9 +2,9 @@
 {% block title %}Authors — {{ SITENAME }}{% endblock title %}
 {% block content_header %}<h1>Authors</h1>{% endblock content_header %}
 {% block content %}
-  <ul>
+  {% if authors %}<ul class="pet-taxonomy-list">
     {% for author, author_articles in authors %}
-      <li><a href="{{ SITEURL }}/{{ author.url }}">{{ author }}</a> ({{ author_articles | count }})</li>
+      <li><a href="{{ (SITEURL ~ '/' ~ author.url) | forceescape }}">{{ author | forceescape }}</a> <span aria-label="{{ author_articles | count }} articles">({{ author_articles | count }})</span></li>
     {% endfor %}
-  </ul>
+  </ul>{% else %}<p>No authors are available.</p>{% endif %}
 {% endblock content %}

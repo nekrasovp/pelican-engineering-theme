@@ -1,4 +1,13 @@
 {% extends "base.html" %}
-{% block title %}{{ article.title }} — {{ SITENAME }}{% endblock title %}
-{% block content_header %}<h1>{{ article.title }}</h1>{% endblock content_header %}
-{% block content %}<article>{{ article.content }}</article>{% endblock content %}
+{% block title %}{{ article.title | striptags | forceescape }} — {{ SITENAME | forceescape }}{% endblock title %}
+{% block page_class %}{{ super() }} pet-content-page{% endblock page_class %}
+{% block content_header %}
+  <header class="pet-content-header">
+    <h1>{{ article.title | striptags | forceescape }}</h1>
+    {% set pet_metadata_content = article %}{% include "includes/article-metadata.html" %}
+    {% set pet_translation_content = article %}{% include "includes/translations.html" %}
+    {% set pet_status_content = article %}{% include "includes/content-status.html" %}
+  </header>
+{% endblock content_header %}
+{% block content %}<article class="pet-prose">{{ article.content }}</article>{% endblock content %}
+{% block content_footer %}{% set pet_footer_content = article %}{% include "includes/content-footer.html" %}{% endblock content_footer %}
