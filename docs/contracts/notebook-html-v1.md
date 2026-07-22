@@ -1,7 +1,7 @@
 # PLUGIN-003 notebook HTML compatibility contract v1
 
 - Contract ID: `plugin003-nbconvert-basic-v1`
-- Status: implemented by the unreleased `0.0.0.dev0` theme
+- Status: implemented by the unpublished `0.1.0` release candidate
 - Reader metadata value: `nbconvert-basic.v1`
 - Reader repository: `nekrasovp/pelican-jupyter`
 - Reader commit: `137e1eb0ea620f1b15fff0ba81725eea23de1b7a`

@@ -20,3 +20,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Validate foundation contracts and implementation boundaries
         run: python3 scripts/validate_foundation.py
+      - name: Validate all documentation links and screenshot provenance
+        run: python3 scripts/validate_docs.py --external
+      - name: Validate explicit protected publication policy
+        run: python3 scripts/validate_release_policy.py

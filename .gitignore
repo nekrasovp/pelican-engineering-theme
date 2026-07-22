@@ -5,8 +5,11 @@
 __pycache__/
 build/
 dist/
+artifacts/
 htmlcov/
 node_modules/
+.quickstart-venv/
+quickstart/
 .coverage
 *.egg-info/
 examples/minimal/output/

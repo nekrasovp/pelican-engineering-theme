@@ -7,7 +7,7 @@ from pathlib import Path
 
 __all__ = ["__version__", "get_theme_path"]
 
-__version__ = "0.0.0.dev0"
+__version__ = "0.1.0"
 
 
 def get_theme_path() -> Path:

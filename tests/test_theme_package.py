@@ -66,8 +66,8 @@ def test_distribution_identity() -> None:
 
     assert project_metadata["Name"] == "pelican-engineering-theme"
     assert project_metadata["License-Expression"] == "MIT"
-    assert version("pelican-engineering-theme") == "0.0.0.dev0"
-    assert pelican_engineering_theme.__version__ == "0.0.0.dev0"
+    assert version("pelican-engineering-theme") == "0.1.0"
+    assert pelican_engineering_theme.__version__ == "0.1.0"
 
 
 def test_get_theme_path_returns_complete_filesystem_theme() -> None:

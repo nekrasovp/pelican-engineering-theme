@@ -1,7 +1,7 @@
 # Customization contract v1
 
 - Contract ID: `pelican-engineering-theme-customization-v1`
-- Status: implemented by the unreleased `0.0.0.dev0` package
+- Status: implemented by the unpublished `0.1.0` release candidate
 - Applies from: first `0.1.x` preview that implements the theme
 
 This document freezes the initial public names established in THEME-001,

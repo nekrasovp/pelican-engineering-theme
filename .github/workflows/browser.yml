@@ -36,7 +36,7 @@ jobs:
       - name: Run real-browser acceptance and capture deterministic evidence
         env:
           PET_RUN_BROWSER: "1"
-          PET_SCREENSHOT_DIR: artifacts/theme006-browser
+          PET_SCREENSHOT_DIR: artifacts/theme007-browser
           PET_EXPECTED_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: >-
           uv run --locked --all-groups pytest -m browser
@@ -45,7 +45,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: theme006-browser-evidence
-          path: artifacts/theme006-browser/**
+          name: theme007-browser-evidence
+          path: artifacts/theme007-browser/**
           if-no-files-found: error
           retention-days: 14

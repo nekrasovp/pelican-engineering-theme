@@ -1,7 +1,7 @@
 include CHANGELOG.md CONTRIBUTING.md README.md SECURITY.md THIRD_PARTY.md
 recursive-include LICENSES *.txt
 recursive-include .github/workflows *.yml
-recursive-include docs *.md
+recursive-include docs *.json *.md *.png
 recursive-include examples/minimal *.md *.py
 recursive-include examples/full *.html *.ipynb *.md *.py
 recursive-include scripts *.py

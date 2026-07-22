@@ -81,18 +81,18 @@ def test_browser_source_sha_records_verified_actual_checkout(
 
 
 def test_package_artifact_records_exact_source_and_distribution_hashes() -> None:
-    workflow = (ROOT / ".github/workflows/package.yml").read_text(
-        encoding="utf-8"
-    )
+    workflow = (ROOT / ".github/workflows/package.yml").read_text(encoding="utf-8")
+    candidate = (ROOT / "scripts/release_candidate.py").read_text(encoding="utf-8")
 
-    assert 'actual_source_sha="$(git rev-parse HEAD)"' in workflow
-    assert (
-        'test "${actual_source_sha}" = "${PET_EXPECTED_SOURCE_SHA}"'
-        in workflow
+    assert "scripts/release_candidate.py build" in workflow
+    assert "artifacts/release-candidate.json" in workflow
+    expected_sha_assignment = (
+        "PET_EXPECTED_SOURCE_SHA: "
+        "${{ github.event.pull_request.head.sha || github.sha }}"
     )
-    assert '"source_sha": os.environ["PET_ACTUAL_SOURCE_SHA"]' in workflow
-    assert '"expected_source_sha": os.environ["PET_EXPECTED_SOURCE_SHA"]' in (
-        workflow
-    )
-    assert '"sha256": hashlib.sha256(path.read_bytes()).hexdigest()' in workflow
-    assert "artifacts/package-report.json" in workflow
+    assert expected_sha_assignment in workflow
+    assert 'run_text(["git", "rev-parse", "HEAD"])' in candidate
+    assert '"source_sha": actual' in candidate
+    assert '"expected_source_sha": expected' in candidate
+    assert "sha256_file(directory / name)" in candidate
+    assert '"reproducible_builds": 2' in candidate
