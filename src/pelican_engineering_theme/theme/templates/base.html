@@ -1,12 +1,38 @@
+{% set pet_content = article if article is defined else page if page is defined else none %}
+{% set pet_document_lang = pet_content.lang | default(DEFAULT_LANG | default('en', true), true) if pet_content else DEFAULT_LANG | default('en', true) %}
+{% set pet_document_title = SITENAME | default('', true) %}
+{% set pet_canonical_path = '' %}
+{% if article is defined %}
+  {% set pet_document_title = article.title | default('', true) %}
+  {% set pet_canonical_path = article.url | default('', true) %}
+{% elif page is defined %}
+  {% set pet_document_title = page.title | default('', true) %}
+  {% set pet_canonical_path = page.url | default('', true) %}
+{% elif category is defined %}
+  {% set pet_document_title = category | string %}
+  {% set pet_canonical_path = articles_page.url | default(category.url | default('', true), true) if articles_page is defined else category.url | default('', true) %}
+{% elif tag is defined %}
+  {% set pet_document_title = tag | string %}
+  {% set pet_canonical_path = articles_page.url | default(tag.url | default('', true), true) if articles_page is defined else tag.url | default('', true) %}
+{% elif author is defined %}
+  {% set pet_document_title = author | string %}
+  {% set pet_canonical_path = articles_page.url | default(author.url | default('', true), true) if articles_page is defined else author.url | default('', true) %}
+{% elif output_file | default('') != '404.html' %}
+  {% set pet_direct_path = url | default(output_file | default('', true), true) %}
+  {% set pet_canonical_path = articles_page.url | default(pet_direct_path, true) if articles_page is defined else pet_direct_path %}
+{% endif %}
+{% set pet_siteurl = SITEURL | default('', true) %}
+{% set pet_siteurl_valid = pet_siteurl is string and (pet_siteurl.startswith('https://') or pet_siteurl.startswith('http://')) and '"' not in pet_siteurl and "'" not in pet_siteurl and '<' not in pet_siteurl and '>' not in pet_siteurl and ' ' not in pet_siteurl %}
+{% set pet_canonical_url = pet_siteurl.rstrip('/') ~ '/' ~ pet_canonical_path.lstrip('/') if pet_siteurl_valid and pet_canonical_path is string and pet_canonical_path else '' %}
 <!doctype html>
-<html lang="{{ DEFAULT_LANG | default('en') | e }}">
+<html lang="{{ pet_document_lang | forceescape }}">
   <head>
     {% block html_head %}
       {% include "includes/head-metadata.html" %}
       <title>{% block title %}{{ SITENAME | e }}{% endblock title %}</title>
-      {% block head_meta %}{% endblock head_meta %}
-      {% block canonical %}{% endblock canonical %}
-      {% block structured_data %}{% endblock structured_data %}
+      {% block head_meta %}{% include "includes/social-metadata.html" %}{% endblock head_meta %}
+      {% block canonical %}{% include "includes/canonical.html" %}{% endblock canonical %}
+      {% block structured_data %}{% include "includes/structured-data.html" %}{% endblock structured_data %}
       <script data-pet-theme-loader>
         (function () {
           "use strict";
@@ -24,7 +50,7 @@
         }());
       </script>
       {% block head_styles %}
-        <link rel="stylesheet" href="{{ SITEURL }}/{{ THEME_STATIC_DIR }}/css/scaffold.css">
+        <link rel="stylesheet" href="{{ (SITEURL ~ '/' ~ THEME_STATIC_DIR ~ '/css/scaffold.css') | forceescape }}">
       {% endblock head_styles %}
     {% endblock html_head %}
   </head>
@@ -45,7 +71,7 @@
     {% block site_footer %}
       {% include "includes/footer.html" %}
     {% endblock site_footer %}
-    <script src="{{ SITEURL }}/{{ THEME_STATIC_DIR }}/js/theme.js" defer></script>
+    <script src="{{ (SITEURL ~ '/' ~ THEME_STATIC_DIR ~ '/js/theme.js') | forceescape }}" defer></script>
     {% block scripts %}{% endblock scripts %}
     {% block body_end %}{% endblock body_end %}
   </body>

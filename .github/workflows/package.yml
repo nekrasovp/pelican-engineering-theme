@@ -92,15 +92,56 @@ jobs:
         run: uv build
       - name: Verify identity, metadata, and package data
         run: uv run --locked --all-groups python scripts/verify_distribution.py dist
-      - name: Upload wheel, sdist, and generic example
+      - name: Record exact source and distribution hashes
+        env:
+          PET_EXPECTED_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        shell: bash
+        run: |
+          actual_source_sha="$(git rev-parse HEAD)"
+          test "${actual_source_sha}" = "${PET_EXPECTED_SOURCE_SHA}"
+          PET_ACTUAL_SOURCE_SHA="${actual_source_sha}" python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          files = sorted(
+              path
+              for path in Path("dist").iterdir()
+              if path.suffix == ".whl" or path.name.endswith(".tar.gz")
+          )
+          assert len(files) == 2, files
+          report = {
+              "source_sha": os.environ["PET_ACTUAL_SOURCE_SHA"],
+              "expected_source_sha": os.environ["PET_EXPECTED_SOURCE_SHA"],
+              "files": [
+                  {
+                      "name": path.name,
+                      "bytes": path.stat().st_size,
+                      "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+                  }
+                  for path in files
+              ],
+          }
+          target = Path("artifacts/package-report.json")
+          target.parent.mkdir(parents=True, exist_ok=True)
+          target.write_text(
+              json.dumps(report, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+      - name: Upload wheel, sdist, exact-source report, and generic example
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: install-proof-input
           path: |
             dist/*.whl
             dist/*.tar.gz
+            artifacts/package-report.json
             examples/minimal/**
             examples/full/**
+            scripts/__init__.py
+            scripts/validate_content.py
             scripts/validate_shell.py
           if-no-files-found: error
           retention-days: 7
@@ -166,7 +207,22 @@ jobs:
           done
           test -f "${proof_root}/examples/minimal/output/small-technical-note.html"
           test -f "${proof_root}/examples/full/output/configurable-shell.html"
+          test -f "${proof_root}/examples/full/output/404.html"
+          test -f "${proof_root}/examples/full/output/archives.html"
+          test -f "${proof_root}/examples/full/output/categories.html"
+          test -f "${proof_root}/examples/full/output/category/guides.html"
+          test -f "${proof_root}/examples/full/output/tags.html"
+          test -f "${proof_root}/examples/full/output/tag/example.html"
+          test -f "${proof_root}/examples/full/output/authors.html"
+          test -f "${proof_root}/examples/full/output/author/example-editors.html"
+          test -f "${proof_root}/examples/full/output/pages/about.html"
+          test -f "${proof_root}/examples/full/output/index2.html"
+          test -f "${proof_root}/examples/full/output/index3.html"
           "${proof_python}" -I "${artifact_root}/scripts/validate_shell.py" \
+            "${proof_root}/examples/minimal/output" \
+            "${proof_root}/examples/full/output"
+          cd "${artifact_root}"
+          env -u PYTHONPATH "${proof_python}" -m scripts.validate_content \
             "${proof_root}/examples/minimal/output" \
             "${proof_root}/examples/full/output"
 

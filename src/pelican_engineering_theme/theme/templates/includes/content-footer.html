@@ -1,0 +1,17 @@
+{% set pet_footer_content = pet_footer_content | default(pet_content) %}
+{% set pet_related_posts = pet_footer_content.related_posts | default((), true) | selectattr('title') | selectattr('url') | list if pet_footer_content else [] %}
+{% set pet_source_url = pet_footer_content.source_url | default('', true) if pet_footer_content else '' %}
+{% set pet_source_url_valid = pet_source_url is string and (pet_source_url.startswith('https://') or pet_source_url.startswith('http://') or (pet_source_url.startswith('/') and not pet_source_url.startswith('//')) or pet_source_url.startswith('./')) %}
+{% if pet_related_posts or pet_source_url_valid %}
+  <div class="pet-content-footer">
+    {% if pet_related_posts %}
+      <nav class="pet-related-posts" aria-labelledby="pet-related-posts-title">
+        <h2 id="pet-related-posts-title">Related posts</h2>
+        <ul>{% for related in pet_related_posts %}<li><a href="{{ (SITEURL ~ '/' ~ related.url) | forceescape }}">{{ related.title | striptags | forceescape }}</a></li>{% endfor %}</ul>
+      </nav>
+    {% endif %}
+    {% if pet_source_url_valid %}
+      <p class="pet-source-link"><a href="{{ pet_source_url | forceescape }}">{{ pet_footer_content.source_label | default('View source', true) | forceescape }}</a></p>
+    {% endif %}
+  </div>
+{% endif %}

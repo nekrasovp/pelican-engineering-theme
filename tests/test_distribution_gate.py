@@ -16,12 +16,21 @@ from scripts.verify_distribution import (
 )
 
 NEW_PACKAGE_FILES = (
+    "pelican_engineering_theme/theme/templates/includes/article-metadata.html",
     "pelican_engineering_theme/theme/templates/includes/brand.html",
     "pelican_engineering_theme/theme/templates/includes/footer.html",
     "pelican_engineering_theme/theme/templates/includes/head-metadata.html",
     "pelican_engineering_theme/theme/templates/includes/header.html",
     "pelican_engineering_theme/theme/templates/includes/language-link.html",
     "pelican_engineering_theme/theme/templates/includes/navigation.html",
+    "pelican_engineering_theme/theme/templates/includes/canonical.html",
+    "pelican_engineering_theme/theme/templates/includes/content-footer.html",
+    "pelican_engineering_theme/theme/templates/includes/content-status.html",
+    "pelican_engineering_theme/theme/templates/includes/feed-discovery.html",
+    "pelican_engineering_theme/theme/templates/includes/pagination.html",
+    "pelican_engineering_theme/theme/templates/includes/social-metadata.html",
+    "pelican_engineering_theme/theme/templates/includes/structured-data.html",
+    "pelican_engineering_theme/theme/templates/includes/translations.html",
 )
 
 NEW_SDIST_SUPPORT_FILES = (
@@ -29,13 +38,22 @@ NEW_SDIST_SUPPORT_FILES = (
     ".github/workflows/foundation-docs.yml",
     ".github/workflows/package.yml",
     "examples/full/content/hello.md",
+    "examples/full/content/archived-interface.md",
+    "examples/full/content/deprecated-protocol.md",
+    "examples/full/content/long-technical-title.md",
+    "examples/full/content/multilingual-guide-ru.md",
+    "examples/full/content/multilingual-guide.md",
+    "examples/full/content/pages/about.md",
+    "examples/full/content/source-provenance.md",
     "examples/full/pelicanconf.py",
     "examples/full/templates/index.html",
     "package-lock.json",
     "package.json",
     "scripts/validate_shell.py",
+    "scripts/validate_content.py",
     "tests/site_build.py",
     "tests/test_shell_contract.py",
+    "tests/test_content_contract.py",
 )
 
 
@@ -47,6 +65,15 @@ def test_gate_rejects_omitted_required_template() -> None:
     assert package_data_errors(members) == [
         "missing required package file: "
         "pelican_engineering_theme/theme/templates/base.html"
+    ]
+
+
+def test_gate_rejects_omitted_packaged_404_template() -> None:
+    required = "pelican_engineering_theme/theme/templates/404.html"
+    members = REQUIRED_PACKAGE_FILES - {required}
+
+    assert package_data_errors(members) == [
+        f"missing required package file: {required}"
     ]
 
 

@@ -1,0 +1,34 @@
+{% set pet_person = ENGINEERING_THEME_JSON_LD_PERSON | default({}, true) %}
+{% set pet_website = ENGINEERING_THEME_JSON_LD_WEBSITE | default({}, true) %}
+{% set pet_person_name = pet_person.get('name', '') if pet_person is mapping else '' %}
+{% set pet_person_url = pet_person.get('url', '') if pet_person is mapping else '' %}
+{% set pet_website_name = pet_website.get('name', '') if pet_website is mapping else '' %}
+{% set pet_website_url = pet_website.get('url', '') if pet_website is mapping else '' %}
+{% set pet_is_first_index = output_file | default('') == INDEX_SAVE_AS | default('index.html', true) %}
+{% if pet_is_first_index and pet_person_name and pet_person_url is string and (pet_person_url.startswith('https://') or pet_person_url.startswith('http://')) %}
+  {% set pet_person_schema = {'@context': 'https://schema.org', '@type': 'Person', 'name': pet_person_name | string, 'url': pet_person_url} %}
+  <script type="application/ld+json" data-pet-schema="person">{{ pet_person_schema | tojson }}</script>
+{% endif %}
+{% if pet_is_first_index and pet_website_name and pet_website_url is string and (pet_website_url.startswith('https://') or pet_website_url.startswith('http://')) %}
+  {% set pet_website_schema = {'@context': 'https://schema.org', '@type': 'WebSite', 'name': pet_website_name | string, 'url': pet_website_url} %}
+  <script type="application/ld+json" data-pet-schema="website">{{ pet_website_schema | tojson }}</script>
+{% endif %}
+{% set pet_article_schema_enabled = ENGINEERING_THEME_ENABLE_ARTICLE_JSON_LD | default(false) %}
+{% set pet_article_schema_type = ENGINEERING_THEME_ARTICLE_SCHEMA_TYPE | default('Article', true) %}
+{% set pet_article_author = article.authors[0] | string if article is defined and article.authors | default((), true) else '' %}
+{% if pet_article_schema_enabled and article is defined and pet_article_schema_type in ('Article', 'TechArticle') and pet_canonical_url and article.title | default('') and article.date | default(none) and pet_article_author and article.lang | default('') %}
+  {% set pet_article_schema = {
+    '@context': 'https://schema.org',
+    '@type': pet_article_schema_type,
+    'headline': article.title | string,
+    'datePublished': article.date.isoformat(),
+    'url': pet_canonical_url,
+    'mainEntityOfPage': pet_canonical_url,
+    'inLanguage': article.lang | string,
+    'author': {'@type': 'Person', 'name': pet_article_author}
+  } %}
+  {% if article.modified | default(none) %}{% set pet_article_schema = dict(pet_article_schema, dateModified=article.modified.isoformat()) %}{% endif %}
+  {% if article.summary | default('') %}{% set pet_article_schema = dict(pet_article_schema, description=article.summary | striptags | trim) %}{% endif %}
+  {% if article.tags | default((), true) %}{% set pet_article_schema = dict(pet_article_schema, keywords=article.tags | map('string') | list) %}{% endif %}
+  <script type="application/ld+json" data-pet-schema="article">{{ pet_article_schema | tojson }}</script>
+{% endif %}

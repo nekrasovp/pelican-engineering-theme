@@ -23,6 +23,14 @@ All notable changes will be documented here. The project intends to follow
 - Added minimal and full installed-wheel fixtures, strict generated-shell and
   distribution inventories, keyboard/overflow/no-network browser checks, and a
   locked development-only axe-core accessibility scan.
+- Implemented THEME-005 article, page, archive, category/tag/author, pagination,
+  translation, status, provenance, related-post, canonical, feed discovery,
+  Open Graph, Twitter, JSON-LD, and packaged generic 404 templates on the
+  existing 18-block shell.
+- Expanded generic fixtures with pagination boundaries, English/Russian
+  content, long-form prose structures, empty/malformed negative cases, exact
+  32-file wheel and 44-file self-testing-sdist inventories, and focused HTML,
+  metadata, JSON-LD, installed-wheel, Chromium, and axe evidence.
 
-No final article/taxonomy templates, real-site visual acceptance, tag, or
+No notebook-specific presentation, real-site visual acceptance, tag, or
 published release exists.

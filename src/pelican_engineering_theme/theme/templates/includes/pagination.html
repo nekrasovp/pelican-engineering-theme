@@ -1,0 +1,9 @@
+{% if DEFAULT_PAGINATION | default(false) and articles_page is defined and articles_paginator is defined and articles_page.has_other_pages() %}
+  <nav class="pet-pagination" aria-label="Pagination">
+    <p>Page {{ articles_page.number }} of {{ articles_paginator.num_pages }}</p>
+    <ul>
+      {% if articles_page.has_previous() and articles_previous_page %}<li><a rel="prev" href="{{ (SITEURL ~ '/' ~ articles_previous_page.url) | forceescape }}">Previous</a></li>{% endif %}
+      {% if articles_page.has_next() and articles_next_page %}<li><a rel="next" href="{{ (SITEURL ~ '/' ~ articles_next_page.url) | forceescape }}">Next</a></li>{% endif %}
+    </ul>
+  </nav>
+{% endif %}

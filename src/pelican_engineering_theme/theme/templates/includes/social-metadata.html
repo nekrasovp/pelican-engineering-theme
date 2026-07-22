@@ -1,0 +1,20 @@
+{% set pet_social_enabled = ENGINEERING_THEME_ENABLE_SOCIAL_METADATA | default(true) %}
+{% set pet_social_description = ENGINEERING_THEME_META_DESCRIPTION | default('', true) %}
+{% if pet_content and pet_content.summary | default('') %}
+  {% set pet_social_description = pet_content.summary | striptags | trim %}
+{% endif %}
+{% set pet_social_image = ENGINEERING_THEME_SOCIAL_IMAGE | default('', true) %}
+{% set pet_social_image_valid = pet_social_image is string and (pet_social_image.startswith('https://') or pet_social_image.startswith('http://')) %}
+{% if pet_social_enabled and pet_document_title and pet_canonical_url %}
+  <meta property="og:type" content="{{ 'article' if article is defined else 'website' }}">
+  <meta property="og:title" content="{{ pet_document_title | striptags | forceescape }}">
+  <meta property="og:url" content="{{ pet_canonical_url | forceescape }}">
+  {% if pet_social_description %}<meta property="og:description" content="{{ pet_social_description | forceescape }}">{% endif %}
+  {% if pet_social_image_valid %}<meta property="og:image" content="{{ pet_social_image | forceescape }}">{% endif %}
+  <meta name="twitter:card" content="{{ 'summary_large_image' if pet_social_image_valid else 'summary' }}">
+  <meta name="twitter:title" content="{{ pet_document_title | striptags | forceescape }}">
+  {% if pet_social_description %}<meta name="twitter:description" content="{{ pet_social_description | forceescape }}">{% endif %}
+  {% if pet_social_image_valid %}<meta name="twitter:image" content="{{ pet_social_image | forceescape }}">{% endif %}
+  {% if article is defined and article.date | default(none) %}<meta property="article:published_time" content="{{ article.date.isoformat() | forceescape }}">{% endif %}
+  {% if article is defined and article.modified | default(none) %}<meta property="article:modified_time" content="{{ article.modified.isoformat() | forceescape }}">{% endif %}
+{% endif %}

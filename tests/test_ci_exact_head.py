@@ -78,3 +78,21 @@ def test_browser_source_sha_records_verified_actual_checkout(
     monkeypatch.setenv("PET_EXPECTED_SOURCE_SHA", actual)
 
     assert browser_acceptance.verified_checkout_sha() == (actual, actual)
+
+
+def test_package_artifact_records_exact_source_and_distribution_hashes() -> None:
+    workflow = (ROOT / ".github/workflows/package.yml").read_text(
+        encoding="utf-8"
+    )
+
+    assert 'actual_source_sha="$(git rev-parse HEAD)"' in workflow
+    assert (
+        'test "${actual_source_sha}" = "${PET_EXPECTED_SOURCE_SHA}"'
+        in workflow
+    )
+    assert '"source_sha": os.environ["PET_ACTUAL_SOURCE_SHA"]' in workflow
+    assert '"expected_source_sha": os.environ["PET_EXPECTED_SOURCE_SHA"]' in (
+        workflow
+    )
+    assert '"sha256": hashlib.sha256(path.read_bytes()).hexdigest()' in workflow
+    assert "artifacts/package-report.json" in workflow

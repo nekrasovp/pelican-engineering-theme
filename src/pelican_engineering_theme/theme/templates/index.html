@@ -1,10 +1,16 @@
 {% extends "base.html" %}
-{% block content_header %}<h1>{{ SITENAME }}</h1>{% endblock content_header %}
+{% block page_class %}{{ super() }} pet-listing-page{% endblock page_class %}
+{% block content_header %}<h1>{{ SITENAME | forceescape }}</h1>{% endblock content_header %}
 {% block content %}
   {% set listing_articles = articles_page.object_list if articles_page else articles %}
-  <ol>
+  {% if listing_articles %}<div class="pet-entry-list">
     {% for article in listing_articles %}
-      <li><a href="{{ SITEURL }}/{{ article.url }}">{{ article.title }}</a></li>
+      <article class="pet-entry" lang="{{ article.lang | default(DEFAULT_LANG | default('en', true), true) | forceescape }}">
+        <h2><a rel="bookmark" href="{{ (SITEURL ~ '/' ~ article.url) | forceescape }}">{{ article.title | striptags | forceescape }}</a></h2>
+        {% if article.summary | default('') %}<div class="pet-entry__summary pet-prose">{{ article.summary }}</div>{% endif %}
+        {% set pet_metadata_content = article %}{% include "includes/article-metadata.html" %}
+      </article>
     {% endfor %}
-  </ol>
+  </div>{% else %}<p>No articles are available.</p>{% endif %}
+  {% include "includes/pagination.html" %}
 {% endblock content %}

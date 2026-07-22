@@ -1,3 +1,3 @@
 {% extends "index.html" %}
-{% block title %}{{ tag }} — {{ SITENAME }}{% endblock title %}
-{% block content_header %}<h1>{{ tag }}</h1>{% endblock content_header %}
+{% block title %}{{ tag | forceescape }} — {{ SITENAME | forceescape }}{% endblock title %}
+{% block content_header %}<h1>{{ tag | forceescape }}</h1>{% endblock content_header %}
