@@ -44,6 +44,7 @@ smaller and safer boundary.
 | [Pelican](https://github.com/getpelican/pelican/blob/3c69dc68d25a761911697467c765a16e68915c74/LICENSE) | AGPL-3.0 | Build/runtime tool; not bundled, copied, or redistributed by the theme foundation |
 | [Jinja](https://github.com/pallets/jinja/blob/5ef70112a1ff19c05324ff889dd30405b1002044/LICENSE.txt) | BSD-3-Clause | Template engine; not bundled or copied |
 | [PLUGIN-003 reader repository](https://github.com/nekrasovp/pelican-jupyter/blob/137e1eb0ea620f1b15fff0ba81725eea23de1b7a/LICENSE.txt) | Apache-2.0 | Repository license reviewed; the generated fragment is only referenced and hashed. Copying it requires a separate exact intake review of generator/template provenance and obligations |
+| [axe-core 4.12.1](https://github.com/dequelabs/axe-core/tree/v4.12.1) | MPL-2.0 | Development/CI accessibility scanner pinned exactly in `package.json` and `package-lock.json`; installed only with `npm ci`, injected into local Chromium test pages, and forbidden from the wheel, sdist, and runtime theme |
 
 An MIT theme can interoperate with these tools under the stated separation.
 If a future distribution bundles or modifies upstream material, its license and
@@ -76,5 +77,7 @@ does not waive attribution or notice conditions.
 - `THIRD_PARTY.md` or equivalent notices must be added before any approved
   third-party material enters a release artifact.
 
-At this foundation commit, the repository contains no third-party runtime
-code, theme asset, font, icon, image, or copied fixture.
+The repository contains no third-party runtime code, theme asset, font, icon,
+image, or copied fixture. The test-only axe-core payload exists only in an
+ignored local `node_modules` directory or the isolated browser job; exact
+distribution gates reject that directory from both wheel and sdist.

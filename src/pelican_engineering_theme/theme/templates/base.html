@@ -1,12 +1,12 @@
 <!doctype html>
-<html lang="{{ DEFAULT_LANG | default('en') }}">
+<html lang="{{ DEFAULT_LANG | default('en') | e }}">
   <head>
     {% block html_head %}
-      <meta charset="utf-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1">
-      <meta name="theme-color" content="#f7f8f3" data-pet-theme-color>
-      <title>{% block title %}{{ SITENAME }}{% endblock title %}</title>
+      {% include "includes/head-metadata.html" %}
+      <title>{% block title %}{{ SITENAME | e }}{% endblock title %}</title>
       {% block head_meta %}{% endblock head_meta %}
+      {% block canonical %}{% endblock canonical %}
+      {% block structured_data %}{% endblock structured_data %}
       <script data-pet-theme-loader>
         (function () {
           "use strict";
@@ -28,26 +28,22 @@
       {% endblock head_styles %}
     {% endblock html_head %}
   </head>
-  <body>
+  <body class="{% block body_class %}pet-shell{% endblock body_class %}">
     {% block body_start %}{% endblock body_start %}
+    <a class="pet-skip-link" href="#main-content">Skip to main content</a>
     {% block site_header %}
-      <header>
-        <a href="{{ SITEURL }}/">{{ SITENAME }}</a>
-        {% block site_navigation %}{% endblock site_navigation %}
-        {% include "includes/theme-toggle.html" %}
-      </header>
+      {% set pet_site_navigation %}{% block site_navigation %}{% include "includes/navigation.html" %}{% endblock site_navigation %}{% endset %}
+      {% set pet_theme_toggle %}{% include "includes/theme-toggle.html" %}{% endset %}
+      {% include "includes/header.html" %}
     {% endblock site_header %}
-    <main>
+    <main id="main-content" class="{% block page_class %}pet-main{% endblock page_class %}" tabindex="-1">
+      {% block hero %}{% endblock hero %}
       {% block content_header %}{% endblock content_header %}
       {% block content %}{% endblock content %}
       {% block content_footer %}{% endblock content_footer %}
     </main>
     {% block site_footer %}
-      <footer>
-        {% if ENGINEERING_THEME_SHOW_PELICAN_CREDIT | default(false) %}
-          <a href="https://getpelican.com/">Built with Pelican</a>
-        {% endif %}
-      </footer>
+      {% include "includes/footer.html" %}
     {% endblock site_footer %}
     <script src="{{ SITEURL }}/{{ THEME_STATIC_DIR }}/js/theme.js" defer></script>
     {% block scripts %}{% endblock scripts %}

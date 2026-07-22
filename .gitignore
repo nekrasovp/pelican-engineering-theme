@@ -6,6 +6,8 @@ __pycache__/
 build/
 dist/
 htmlcov/
+node_modules/
 .coverage
 *.egg-info/
 examples/minimal/output/
+examples/full/output/

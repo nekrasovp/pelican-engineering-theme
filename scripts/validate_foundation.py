@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 EXACT_HEAD_EXPRESSION = "${{ github.event.pull_request.head.sha || github.sha }}"
 
 REQUIRED_FILES = {
+    ".gitignore",
     "README.md",
     "LICENSE",
     "CHANGELOG.md",
@@ -27,22 +28,36 @@ REQUIRED_FILES = {
     ".github/ISSUE_TEMPLATE/config.yml",
     ".github/workflows/foundation-docs.yml",
     ".github/workflows/package.yml",
+    ".github/workflows/browser.yml",
+    "package.json",
+    "package-lock.json",
     "pyproject.toml",
     "uv.lock",
     "src/pelican_engineering_theme/__init__.py",
     "src/pelican_engineering_theme/theme/templates/base.html",
+    "src/pelican_engineering_theme/theme/templates/includes/brand.html",
+    "src/pelican_engineering_theme/theme/templates/includes/footer.html",
+    "src/pelican_engineering_theme/theme/templates/includes/head-metadata.html",
+    "src/pelican_engineering_theme/theme/templates/includes/header.html",
+    "src/pelican_engineering_theme/theme/templates/includes/language-link.html",
+    "src/pelican_engineering_theme/theme/templates/includes/navigation.html",
     "src/pelican_engineering_theme/theme/templates/includes/theme-toggle.html",
     "src/pelican_engineering_theme/theme/static/css/scaffold.css",
     "src/pelican_engineering_theme/theme/static/js/theme.js",
     "examples/minimal/pelicanconf.py",
     "examples/minimal/content/hello.md",
+    "examples/full/pelicanconf.py",
+    "examples/full/content/hello.md",
+    "examples/full/templates/index.html",
+    "scripts/validate_shell.py",
+    "tests/site_build.py",
     "tests/__init__.py",
     "tests/test_example_build.py",
     "tests/test_distribution_gate.py",
     "tests/test_color_mode_contract.py",
     "tests/test_browser_acceptance.py",
     "tests/test_ci_exact_head.py",
-    ".github/workflows/browser.yml",
+    "tests/test_shell_contract.py",
 }
 
 FORBIDDEN_ROOT_IMPLEMENTATION_PATHS = {
@@ -127,7 +142,15 @@ EXPECTED_SOURCE_SHA = re.compile(r"^\s*PET_EXPECTED_SOURCE_SHA:\s*(.*?)\s*$")
 
 
 def markdown_files() -> list[Path]:
-    excluded = {".git", ".mypy_cache", ".pytest_cache", ".ruff_cache", ".venv", "dist"}
+    excluded = {
+        ".git",
+        ".mypy_cache",
+        ".pytest_cache",
+        ".ruff_cache",
+        ".venv",
+        "dist",
+        "node_modules",
+    }
     return sorted(
         path for path in ROOT.rglob("*.md") if not excluded.intersection(path.parts)
     )
@@ -307,9 +330,7 @@ def checkout_refs(workflow_text: str) -> list[tuple[int, str | None]]:
 def ci_exact_head_errors(workflow_dir: Path) -> list[str]:
     """Validate immutable exact-head evidence across every PR workflow checkout."""
     errors: list[str] = []
-    workflow_paths = sorted(
-        {*workflow_dir.glob("*.yml"), *workflow_dir.glob("*.yaml")}
-    )
+    workflow_paths = sorted({*workflow_dir.glob("*.yml"), *workflow_dir.glob("*.yaml")})
     for path in workflow_paths:
         text = path.read_text(encoding="utf-8")
         if PULL_REQUEST_TRIGGER.search(text) is None:

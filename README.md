@@ -1,8 +1,8 @@
 # pelican-engineering-theme
 
 > Status: the unreleased installable package includes the semantic color-mode
-> foundation. A reusable site shell, notebook presentation, real-site
-> integration, and published distribution do not exist yet.
+> foundation and reusable core shell. Notebook presentation, real-site
+> integration, and a published distribution do not exist yet.
 
 A reusable, accessibility-conscious Pelican theme for technical writers who
 publish long-form articles, code, and trusted static notebook output.
@@ -55,6 +55,10 @@ cd examples/minimal
 uv run --locked --all-groups pelican content -s pelicanconf.py -o output
 ```
 
+`examples/full` exercises every optional shell setting and a child template
+that extends `!theme/index.html`; both examples are built from the installed
+wheel outside the checkout in CI.
+
 `pip install pelican-engineering-theme` is future release syntax only. It does
 not work until a separately authorized PyPI publication has occurred.
 
@@ -98,10 +102,31 @@ state. With JavaScript disabled the button remains hidden and the complete
 light CSS fallback remains usable. Print always uses a readable light palette.
 No palette decision uses `prefers-color-scheme`.
 
+## Reusable shell configuration
+
+The shell uses standard Pelican `MENUITEMS` tuples for primary navigation:
+
+```python
+MENUITEMS = (("Home", "/"), ("Guides", "/guides/"))
+ENGINEERING_THEME_LANGUAGE_LINKS = (
+    {"label": "Français", "url": "/fr/", "lang": "fr"},
+)
+ENGINEERING_THEME_FOOTER_TEXT = "A technical publication."
+```
+
+Brand label/URL, language links, footer text, and the optional Pelican credit
+are settings. A non-empty `ENGINEERING_THEME_NAV` may replace `MENUITEMS` only
+when mappings need `current: true` and `aria-current="page"`. Empty optional
+settings render no empty navigation, language control, or footer. The header
+wraps at narrow widths without Bootstrap, third-party JavaScript, or a
+hamburger requirement; a working skip link targets the semantic main element.
+
 ## Customization contract
 
-The minimal base exposes the 12 stable template-block names and optional Pelican
-credit. All public CSS custom properties are implemented with light values on
+The base exposes 18 stable template-block names, including title, metadata,
+canonical, structured data, body/page classes, hero, content, and scripts. It
+also provides generic container, button, prose, and status-notice classes. All
+public CSS custom properties are implemented with light values on
 `:root` and color-specific dark values on `html[data-theme="dark"]`. Names,
 semantics, storage behavior, tested contrast pairs, and the system-font policy
 are documented in
@@ -115,15 +140,18 @@ The browser binary is a development and CI tool, not a runtime dependency:
 
 ```sh
 uv sync --locked --all-groups
+npm ci --ignore-scripts
 uv run --locked --all-groups playwright install chromium
 PET_RUN_BROWSER=1 uv run --locked --all-groups \
   pytest -m browser tests/test_browser_acceptance.py
 ```
 
-The browser workflow uploads deterministic light and dark screenshots at
-390×844, 768×1024, and 1440×1000 together with a machine-readable case and
-pre-paint timing report. Green automation is evidence for review, not user
-visual acceptance.
+The browser workflow uploads deterministic minimal/full light and dark
+screenshots at 390×844, 768×1024, and 1440×1000 together with a machine-readable
+case, axe-core accessibility, focus/skip, overflow, no-network, and pre-paint
+timing report. axe-core is an exact, development-only dependency installed from
+`package-lock.json`; it is not bundled in the wheel or source archive. Green
+automation is evidence for review, not user visual acceptance.
 
 ## Non-goals
 

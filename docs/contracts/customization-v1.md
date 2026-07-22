@@ -4,9 +4,9 @@
 - Status: implemented by the unreleased `0.0.0.dev0` package
 - Applies from: first `0.1.x` preview that implements the theme
 
-This document freezes the initial public names established in THEME-001 and
-records their compatible THEME-003 color-mode implementation. It does not add a
-stable layout or component-selector API.
+This document freezes the initial public names established in THEME-001,
+records their compatible THEME-003 color-mode implementation, and adds the
+THEME-004 reusable shell, configuration, and generic component contracts.
 
 ## Stable template blocks
 
@@ -15,11 +15,17 @@ The base template will expose these blocks in document order:
 | Block | Intended extension point |
 | --- | --- |
 | `html_head` | Entire contents of `<head>` while preserving required defaults through `super()` |
+| `title` | Text content of the document title |
 | `head_meta` | Additional metadata and link elements |
+| `canonical` | Optional canonical link |
+| `structured_data` | Optional structured-data script elements |
 | `head_styles` | Site-owned stylesheets or inline critical styles |
+| `body_class` | Classes on `<body>`; retain defaults through `super()` |
 | `body_start` | First content inside `<body>` |
 | `site_header` | Site identity and header shell |
 | `site_navigation` | Primary navigation |
+| `page_class` | Classes on the semantic `<main>`; retain defaults through `super()` |
+| `hero` | Optional page-level hero before the content header |
 | `content_header` | Title, dates, status, and provenance for the current content |
 | `content` | Main article, page, listing, archive, or taxonomy body |
 | `content_footer` | Content-local footer and source links |
@@ -30,6 +36,65 @@ The base template will expose these blocks in document order:
 Removing or renaming a listed block, changing its documented purpose so an
 existing override no longer works, or making `super()` unsafe is a breaking
 change. Undocumented internal blocks are not public API.
+
+The packaged includes own head metadata, header, brand, navigation, language
+links, theme toggle, and footer markup. They are internal composition units;
+sites should use settings or the stable blocks rather than copy an include.
+
+To override one block without copying the document shell, add a directory to
+Pelican's standard `THEME_TEMPLATES_OVERRIDES` setting and explicitly extend the
+packaged theme template:
+
+```jinja2
+{% extends "!theme/index.html" %}
+{% block hero %}<p>Site-owned introduction.</p>{% endblock hero %}
+```
+
+## Shell configuration
+
+Standard Pelican settings are primary where they already express the needed
+contract:
+
+| Setting | Contract |
+| --- | --- |
+| `SITENAME` | Default brand label and document title |
+| `SITEURL` | Default brand-home prefix and packaged asset prefix |
+| `DEFAULT_LANG` | `<html lang>` value, defaulting to `en` |
+| `MENUITEMS` | Primary navigation as Pelican `(label, URL)` tuples |
+
+Theme-specific settings cover behavior without a standard Pelican equivalent:
+
+| Setting | Default | Contract |
+| --- | --- | --- |
+| `ENGINEERING_THEME_BRAND_LABEL` | `SITENAME` | Brand label; an explicit empty value falls back to `SITENAME` |
+| `ENGINEERING_THEME_BRAND_URL` | `SITEURL + '/'` | Brand destination |
+| `ENGINEERING_THEME_NAV` | empty | Optional mappings with `label`, `url`, and optional `current`; a non-empty value replaces `MENUITEMS` and `current: true` emits `aria-current="page"` |
+| `ENGINEERING_THEME_LANGUAGE_LINKS` | empty | Sequence of mappings with `label`, `url`, and optional `lang`/`hreflang` |
+| `ENGINEERING_THEME_FOOTER_TEXT` | empty | Escaped plain-text footer content |
+| `ENGINEERING_THEME_SHOW_PELICAN_CREDIT` | `False` | Optional “Built with Pelican” link |
+
+`MENUITEMS` is deliberately the primary navigation API. The namespaced
+`ENGINEERING_THEME_NAV` exists only for the current-page metadata that standard
+two-item Pelican tuples cannot carry. The plural language-link setting follows
+the plan even when a site supplies only one alternate language. Empty settings,
+invalid navigation entries, and invalid language-link entries emit no empty
+control or container.
+
+## Generic shell and content classes
+
+The additive THEME-004 component contract exposes these reusable selectors:
+
+| Selector | Role |
+| --- | --- |
+| `.pet-container` | Centered responsive container using `--pet-content-width` |
+| `.pet-button` | Accessible button treatment for link or button controls |
+| `.pet-prose` | Restrained long-form reading measure and edge spacing |
+| `.pet-status-notice` | Informational notice; `data-status` accepts `success`, `warning`, or `danger` |
+
+Shell implementation classes remain internal. The header and navigation use
+wrapping flex layout rather than a hamburger or Bootstrap dependency. The skip
+link is the first default focus target and moves focus to
+`main#main-content[tabindex="-1"]`.
 
 ## Stable CSS token namespace
 

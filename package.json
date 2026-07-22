@@ -1,0 +1,9 @@
+{
+  "name": "pelican-engineering-theme-tests",
+  "private": true,
+  "description": "Development-only browser accessibility tooling for pelican-engineering-theme.",
+  "license": "MIT",
+  "devDependencies": {
+    "axe-core": "4.12.1"
+  }
+}

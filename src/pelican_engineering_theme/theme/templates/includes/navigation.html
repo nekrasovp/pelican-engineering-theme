@@ -1,0 +1,27 @@
+{% set pet_extended_navigation = ENGINEERING_THEME_NAV | default((), true) %}
+{% set pet_extended_links = pet_extended_navigation | selectattr('label') | selectattr('url') | list %}
+{% set pet_menu = namespace(links=[]) %}
+{% if not pet_extended_navigation %}
+  {% for item in MENUITEMS | default((), true) %}
+    {% if item | length >= 2 and item[0] and item[1] %}
+      {% set pet_menu.links = pet_menu.links + [item] %}
+    {% endif %}
+  {% endfor %}
+{% endif %}
+{% if pet_extended_links or pet_menu.links %}
+  <nav class="pet-navigation" aria-label="Primary">
+    <ul class="pet-navigation__list">
+      {% if pet_extended_navigation %}
+        {% for item in pet_extended_links %}
+          <li class="pet-navigation__item">
+            <a href="{{ item.url | e }}"{% if item.current | default(false) %} aria-current="page"{% endif %}>{{ item.label | e }}</a>
+          </li>
+        {% endfor %}
+      {% else %}
+        {% for item in pet_menu.links %}
+          <li class="pet-navigation__item"><a href="{{ item[1] | e }}">{{ item[0] | e }}</a></li>
+        {% endfor %}
+      {% endif %}
+    </ul>
+  </nav>
+{% endif %}

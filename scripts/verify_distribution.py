@@ -31,11 +31,20 @@ REQUIRED_PACKAGE_FILES = {
     f"{PACKAGE}/theme/templates/period_archives.html",
     f"{PACKAGE}/theme/templates/tag.html",
     f"{PACKAGE}/theme/templates/tags.html",
+    f"{PACKAGE}/theme/templates/includes/brand.html",
+    f"{PACKAGE}/theme/templates/includes/footer.html",
+    f"{PACKAGE}/theme/templates/includes/head-metadata.html",
+    f"{PACKAGE}/theme/templates/includes/header.html",
+    f"{PACKAGE}/theme/templates/includes/language-link.html",
+    f"{PACKAGE}/theme/templates/includes/navigation.html",
     f"{PACKAGE}/theme/templates/includes/theme-toggle.html",
     f"{PACKAGE}/theme/static/css/scaffold.css",
     f"{PACKAGE}/theme/static/js/theme.js",
 }
 REQUIRED_SDIST_SUPPORT_FILES = {
+    ".github/workflows/browser.yml",
+    ".github/workflows/foundation-docs.yml",
+    ".github/workflows/package.yml",
     "CHANGELOG.md",
     "CONTRIBUTING.md",
     "MANIFEST.in",
@@ -47,20 +56,31 @@ REQUIRED_SDIST_SUPPORT_FILES = {
     "docs/third-party-and-assets.md",
     "examples/minimal/content/hello.md",
     "examples/minimal/pelicanconf.py",
+    "examples/full/content/hello.md",
+    "examples/full/pelicanconf.py",
+    "examples/full/templates/index.html",
+    "package-lock.json",
+    "package.json",
     "pyproject.toml",
     "scripts/__init__.py",
     "scripts/validate_foundation.py",
+    "scripts/validate_shell.py",
     "scripts/verify_clean_sdist.py",
     "scripts/verify_distribution.py",
     "scripts/verify_external_install.py",
     "tests/__init__.py",
+    "tests/site_build.py",
     "tests/test_ci_exact_head.py",
     "tests/test_distribution_gate.py",
     "tests/test_color_mode_contract.py",
     "tests/test_browser_acceptance.py",
     "tests/test_example_build.py",
+    "tests/test_shell_contract.py",
     "tests/test_theme_package.py",
 }
+
+FORBIDDEN_WHEEL_PREFIXES = ("examples/", "node_modules/", "scripts/", "tests/")
+FORBIDDEN_WHEEL_FILES = {"package-lock.json", "package.json"}
 
 
 def package_data_errors(members: Iterable[str], prefix: str = "") -> list[str]:
@@ -73,6 +93,22 @@ def package_data_errors(members: Iterable[str], prefix: str = "") -> list[str]:
     ]
 
 
+def package_inventory_errors(members: Iterable[str], prefix: str = "") -> list[str]:
+    """Reject every undeclared file from the runtime Python package."""
+    package_prefix = f"{prefix}{PACKAGE}/"
+    expected = {f"{prefix}{required}" for required in REQUIRED_PACKAGE_FILES}
+    actual = {member for member in members if member.startswith(package_prefix)}
+    return [
+        f"unexpected runtime package file: {member}"
+        for member in sorted(actual - expected)
+    ]
+
+
+def tar_file_names(members: Iterable[tarfile.TarInfo]) -> list[str]:
+    """Return actual file names, excluding normal tar directory entries."""
+    return [member.name for member in members if member.isfile()]
+
+
 def sdist_support_errors(members: Iterable[str], prefix: str = "") -> list[str]:
     """Return missing source-support errors for the self-testing sdist."""
     member_set = set(members)
@@ -80,6 +116,25 @@ def sdist_support_errors(members: Iterable[str], prefix: str = "") -> list[str]:
         f"missing required sdist support file: {prefix}{required}"
         for required in sorted(REQUIRED_SDIST_SUPPORT_FILES)
         if f"{prefix}{required}" not in member_set
+    ]
+
+
+def wheel_scope_errors(members: Iterable[str]) -> list[str]:
+    """Reject source-only tests, helpers, and examples from the runtime wheel."""
+    return [
+        f"source-only path leaked into wheel: {member}"
+        for member in sorted(members)
+        if member.startswith(FORBIDDEN_WHEEL_PREFIXES)
+        or member in FORBIDDEN_WHEEL_FILES
+    ]
+
+
+def sdist_scope_errors(members: Iterable[str]) -> list[str]:
+    """Reject installed Node payloads from the self-testing source archive."""
+    return [
+        f"installed Node dependency leaked into sdist: {member}"
+        for member in sorted(members)
+        if "/node_modules/" in member or member.startswith("node_modules/")
     ]
 
 
@@ -112,8 +167,10 @@ def license_errors(raw_license: bytes, archive_path: str) -> list[str]:
 def verify_wheel(path: Path) -> list[str]:
     errors: list[str] = []
     with zipfile.ZipFile(path) as archive:
-        members = archive.namelist()
+        members = [item.filename for item in archive.infolist() if not item.is_dir()]
         errors.extend(package_data_errors(members))
+        errors.extend(package_inventory_errors(members))
+        errors.extend(wheel_scope_errors(members))
         metadata_path = f"{NORMALIZED_NAME}-{VERSION}.dist-info/METADATA"
         if metadata_path not in members:
             errors.append(f"missing wheel metadata: {metadata_path}")
@@ -132,9 +189,11 @@ def verify_sdist(path: Path) -> list[str]:
     archive_prefix = f"{NORMALIZED_NAME}-{VERSION}/"
     package_prefix = f"{archive_prefix}src/"
     with tarfile.open(path, mode="r:gz") as archive:
-        members = archive.getnames()
+        members = tar_file_names(archive.getmembers())
         errors.extend(package_data_errors(members, prefix=package_prefix))
+        errors.extend(package_inventory_errors(members, prefix=package_prefix))
         errors.extend(sdist_support_errors(members, prefix=archive_prefix))
+        errors.extend(sdist_scope_errors(members))
         metadata_path = f"{archive_prefix}PKG-INFO"
         try:
             metadata_member = archive.extractfile(metadata_path)
