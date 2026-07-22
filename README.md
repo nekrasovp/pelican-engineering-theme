@@ -1,9 +1,9 @@
 # pelican-engineering-theme
 
 > Status: the unreleased installable package includes the semantic color-mode
-> foundation, reusable core shell, and generic Pelican content, taxonomy,
-> metadata, pagination, and 404 templates. Notebook presentation, real-site
-> integration, and a published distribution do not exist yet.
+> foundation, reusable core shell, generic Pelican content surfaces, and the
+> frozen PLUGIN-003 notebook presentation contract. Real-site integration and
+> a published distribution do not exist yet.
 
 A reusable, accessibility-conscious Pelican theme for technical writers who
 publish long-form articles, code, and trusted static notebook output.
@@ -76,6 +76,34 @@ The theme may style the versioned notebook HTML contract, but it does not
 import a notebook reader, parse or execute notebooks, start kernels, or copy
 site-specific content. See the
 [PLUGIN-003 HTML fixture contract](docs/contracts/notebook-html-v1.md).
+
+## Static notebook presentation
+
+Notebook mode activates only when reader-owned metadata contains both
+`jupyter_notebook=True` and
+`notebook_html_contract="nbconvert-basic.v1"`. The article/page marker scopes
+notebook presentation without making the whole document a scroll container.
+When an HTML table actually overflows, the first-party theme script labels and
+focuses only that local output scroller. This keeps wide dataframes inside the
+viewport without shifting neighboring cells or changing generic article,
+header, navigation, and footer layout. With JavaScript disabled, the CSS
+containment and Chromium's native focusable-scroll-region behavior preserve
+the same local keyboard operation; only the explicit semantic enhancement and
+theme persistence/toggling degrade.
+
+The theme styles the frozen classic `cell`, `text_cell`, `code_cell`,
+`input_area`, prompt, and output classes, plus ordinary Markdown/Pygments code.
+It supports committed stream, error, table/dataframe, PNG, SVG, rich HTML,
+figure/caption, math, and static embedded-output containers in light, dark, and
+print modes. It adds no math renderer, kernel, reader, notebook conversion,
+widget manager, CDN, or remote runtime request.
+
+When the reader is configured to copy a notebook, it supplies a safe
+POSIX-relative `nb_path`. The theme then shows “View or download source
+notebook.” Without a proven notebook marker, exact reader contract, and valid
+relative `.ipynb` path, the control is omitted completely. Absolute,
+protocol-relative, active-scheme, dot-segment, and breakout values are
+rejected.
 
 ## Compatibility target and evidence
 
@@ -206,6 +234,14 @@ semantics, storage behavior, tested contrast pairs, and the system-font policy
 are documented in
 [Customization contract v1](docs/contracts/customization-v1.md). Selectors and
 internal tokens are not public API.
+
+## Exact distribution inventories
+
+Distribution verification requires equality with complete allowlists. The
+wheel contains 32 runtime package files plus five locked distribution-metadata
+files (37 total). The sdist contains an exact 52-file source/testing support
+subset, the 32 runtime source files, and eight locked generated/root metadata
+files (92 total). A missing or undeclared archive member fails closed.
 
 ## Browser evidence
 

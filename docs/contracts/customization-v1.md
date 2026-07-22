@@ -6,8 +6,9 @@
 
 This document freezes the initial public names established in THEME-001,
 records their compatible THEME-003 color-mode implementation, adds the
-THEME-004 reusable shell, and records the additive THEME-005 content, metadata,
-feed, structured-data, pagination, and 404 contracts.
+THEME-004 reusable shell, records the additive THEME-005 content contracts, and
+adds THEME-006 notebook presentation against immutable reader metadata and HTML
+locks.
 
 ## Stable template blocks
 
@@ -116,6 +117,23 @@ HTTP(S), root-relative, or explicit dot-relative link. `Source_Label` is
 escaped plain text. `article.related_posts` must contain objects with non-empty
 `title` and `url`. Empty or invalid optional values emit no wrapper.
 
+Notebook presentation is not activated by a CSS class supplied by arbitrary
+content. The article/page templates require reader-owned
+`jupyter_notebook=True` plus exact
+`notebook_html_contract="nbconvert-basic.v1"`. A matching document receives
+`.pet-notebook-document`; its `.pet-prose` article also receives the
+`.pet-notebook-region` namespacing marker. The whole article is not focusable or
+horizontally scrollable. A genuinely overflowing table receives
+`[data-pet-table-scroller="true"][role="region"][tabindex="0"]` and an
+accessible label on its local `.output_html` wrapper at runtime. Without both
+metadata values, generic content markup and script behavior are unchanged.
+
+The optional source-notebook control additionally requires reader-owned
+`nb_path`. Only a normalized, POSIX-relative `.ipynb` path is accepted. Unsafe,
+absolute, protocol-relative, active-scheme, dot-segment, percent-encoded,
+whitespace, and breakout values omit the control. This is distinct from the
+generic `Source_Url`/`Source_Label` provenance hook.
+
 The package owns `404.html`; a site enables generation with Pelican's
 `TEMPLATE_PAGES = {"404.html": "404.html"}`. The theme loader supplies the
 template, so no manual site copy is required. The missing route emits no
@@ -140,6 +158,7 @@ The additive THEME-004 component contract exposes these reusable selectors:
 | `.pet-content-status--archive` | Historical archive notice |
 | `.pet-content-status--deprecated` | Active deprecation warning |
 | `.pet-pagination` | Previous/next navigation with a visible page boundary label |
+| `.pet-notebook-region` | Proven notebook-content namespacing marker; not itself a scroll container |
 
 Shell implementation classes remain internal. The header and navigation use
 wrapping flex layout rather than a hamburger or Bootstrap dependency. The skip

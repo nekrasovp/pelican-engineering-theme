@@ -1,8 +1,8 @@
 # Contributing
 
-This repository contains an unreleased theme package. The color-mode foundation
-is implemented; a reusable site shell and real-site integration belong to later
-reviewed changes.
+This repository contains an unreleased theme package with a reusable shell,
+content templates, and static notebook presentation. Real-site integration and
+publication belong to later separately reviewed changes.
 
 ## Start with an issue
 

@@ -31,6 +31,17 @@ All notable changes will be documented here. The project intends to follow
   content, long-form prose structures, empty/malformed negative cases, exact
   32-file wheel and 44-file self-testing-sdist inventories, and focused HTML,
   metadata, JSON-LD, installed-wheel, Chromium, and axe evidence.
+- Implemented THEME-006 ordinary Markdown/Pygments and namespaced frozen
+  notebook-fragment presentation for cells, prompts, streams, tracebacks,
+  tables, images, SVG, rich HTML, math, figures, and static embedded outputs in
+  light, dark, narrow, and print modes.
+- Added the real reader-metadata wrapper/source mapping, one keyboard-operable
+  wide-output region, fail-closed source-notebook path handling, an owned
+  committed-output example, and exact source/sdist-only fixture provenance,
+  digest, content, no-execution, browser, accessibility, and package gates;
+  runtime wheel inventory remains 32 files (37 files in the complete wheel
+  archive), while the self-testing sdist support subset is exactly 52 files
+  (92 files in the complete sdist archive). Both full archives reject missing
+  or undeclared payload.
 
-No notebook-specific presentation, real-site visual acceptance, tag, or
-published release exists.
+No real-site visual acceptance, tag, or published release exists.
