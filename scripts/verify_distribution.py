@@ -33,6 +33,20 @@ REQUIRED_PACKAGE_FILES = {
     f"{PACKAGE}/theme/templates/tags.html",
     f"{PACKAGE}/theme/static/css/scaffold.css",
 }
+REQUIRED_SDIST_SUPPORT_FILES = {
+    "MANIFEST.in",
+    "examples/minimal/content/hello.md",
+    "examples/minimal/pelicanconf.py",
+    "pyproject.toml",
+    "scripts/__init__.py",
+    "scripts/validate_foundation.py",
+    "scripts/verify_clean_sdist.py",
+    "scripts/verify_distribution.py",
+    "scripts/verify_external_install.py",
+    "tests/test_distribution_gate.py",
+    "tests/test_example_build.py",
+    "tests/test_theme_package.py",
+}
 
 
 def package_data_errors(members: Iterable[str], prefix: str = "") -> list[str]:
@@ -41,6 +55,16 @@ def package_data_errors(members: Iterable[str], prefix: str = "") -> list[str]:
     return [
         f"missing required package file: {prefix}{required}"
         for required in sorted(REQUIRED_PACKAGE_FILES)
+        if f"{prefix}{required}" not in member_set
+    ]
+
+
+def sdist_support_errors(members: Iterable[str], prefix: str = "") -> list[str]:
+    """Return missing source-support errors for the self-testing sdist."""
+    member_set = set(members)
+    return [
+        f"missing required sdist support file: {prefix}{required}"
+        for required in sorted(REQUIRED_SDIST_SUPPORT_FILES)
         if f"{prefix}{required}" not in member_set
     ]
 
@@ -91,11 +115,13 @@ def verify_wheel(path: Path) -> list[str]:
 
 def verify_sdist(path: Path) -> list[str]:
     errors: list[str] = []
-    prefix = f"{NORMALIZED_NAME}-{VERSION}/src/"
+    archive_prefix = f"{NORMALIZED_NAME}-{VERSION}/"
+    package_prefix = f"{archive_prefix}src/"
     with tarfile.open(path, mode="r:gz") as archive:
         members = archive.getnames()
-        errors.extend(package_data_errors(members, prefix=prefix))
-        metadata_path = f"{NORMALIZED_NAME}-{VERSION}/PKG-INFO"
+        errors.extend(package_data_errors(members, prefix=package_prefix))
+        errors.extend(sdist_support_errors(members, prefix=archive_prefix))
+        metadata_path = f"{archive_prefix}PKG-INFO"
         try:
             metadata_member = archive.extractfile(metadata_path)
         except KeyError:
@@ -104,7 +130,7 @@ def verify_sdist(path: Path) -> list[str]:
             errors.append(f"missing sdist metadata: {metadata_path}")
         else:
             errors.extend(metadata_errors(metadata_member.read()))
-        license_path = f"{NORMALIZED_NAME}-{VERSION}/LICENSE"
+        license_path = f"{archive_prefix}LICENSE"
         try:
             license_member = archive.extractfile(license_path)
         except KeyError:
@@ -141,6 +167,7 @@ def main() -> int:
     print(f"Verified {wheels[0].name} and {sdists[0].name}")
     print(f"Identity: {NAME} {VERSION}; license: MIT")
     print(f"Required package files: {len(REQUIRED_PACKAGE_FILES)}")
+    print(f"Required sdist support files: {len(REQUIRED_SDIST_SUPPORT_FILES)}")
     return 0
 
 
