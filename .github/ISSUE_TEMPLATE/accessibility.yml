@@ -1,0 +1,36 @@
+name: Accessibility problem
+description: Report a barrier affecting keyboard, screen-reader, contrast, motion, or other access.
+title: "[Accessibility]: "
+labels:
+  - accessibility
+body:
+  - type: markdown
+    attributes:
+      value: Do not include health information, personal data, or vulnerability details.
+  - type: input
+    id: surface
+    attributes:
+      label: Page type or component
+      placeholder: Article code block, navigation, theme switch
+    validations:
+      required: true
+  - type: textarea
+    id: barrier
+    attributes:
+      label: Barrier
+      description: Describe the observed behavior and its impact.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Browser, operating system, input method, and assistive technology when relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected accessible behavior
+    validations:
+      required: true
