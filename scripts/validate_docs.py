@@ -25,6 +25,7 @@ EXCLUDED_PARTS = {
     ".pytest_cache",
     ".ruff_cache",
     ".venv",
+    "__pycache__",
     "dist",
     "node_modules",
     "output",
@@ -157,7 +158,7 @@ def render_input_files() -> list[Path]:
             result.update(
                 path
                 for path in input_path.rglob("*")
-                if path.is_file() and "output" not in path.parts
+                if path.is_file() and not EXCLUDED_PARTS.intersection(path.parts)
             )
     return sorted(result)
 

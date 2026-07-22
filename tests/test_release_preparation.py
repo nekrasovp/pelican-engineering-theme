@@ -188,6 +188,24 @@ def test_screenshot_provenance_rejects_modified_capture(tmp_path: Path) -> None:
     assert any(first in error and "SHA-256" in error for error in errors)
 
 
+def test_render_tree_ignores_generated_cache(
+    tmp_path: Path, monkeypatch: MonkeyPatch
+) -> None:
+    source = tmp_path / "source"
+    cache = source / "__pycache__"
+    cache.mkdir(parents=True)
+    (source / "tracked.txt").write_text("tracked", encoding="utf-8")
+    generated = cache / "generated.pyc"
+    generated.write_bytes(b"first")
+    monkeypatch.setattr("scripts.validate_docs.ROOT", tmp_path)
+    monkeypatch.setattr("scripts.validate_docs.RENDER_INPUTS", (source,))
+
+    first = render_tree_sha256()
+    generated.write_bytes(b"second")
+
+    assert render_tree_sha256() == first
+
+
 def test_readme_quickstart_is_the_only_onboarding_source() -> None:
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
 
