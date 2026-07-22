@@ -153,6 +153,7 @@ jobs:
           test -f output/index.html
           test -f output/small-technical-note.html
           test -f output/theme/css/scaffold.css
+          test -f output/theme/js/theme.js
 
   clean-sdist:
     name: Clean unpacked-sdist tests

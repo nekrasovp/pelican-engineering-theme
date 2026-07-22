@@ -28,6 +28,7 @@ Issues = "https://github.com/nekrasovp/pelican-engineering-theme/issues"
 [dependency-groups]
 dev = [
   "mypy>=1.17,<2",
+  "playwright>=1.55,<2",
   "pytest>=8.4,<9",
   "ruff>=0.12,<1",
 ]
@@ -42,11 +43,16 @@ where = ["src"]
 [tool.setuptools.package-data]
 pelican_engineering_theme = [
   "theme/templates/*.html",
+  "theme/templates/includes/*.html",
   "theme/static/css/*.css",
+  "theme/static/js/*.js",
 ]
 
 [tool.pytest.ini_options]
 addopts = "--strict-config --strict-markers"
+markers = [
+  "browser: real Chromium acceptance; requires PET_RUN_BROWSER=1 and a browser binary",
+]
 pythonpath = ["."]
 testpaths = ["tests"]
 

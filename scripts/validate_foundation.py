@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the THEME-001 contracts and THEME-002 implementation boundary."""
+"""Validate foundation contracts, package scope, privacy, and runtime boundaries."""
 
 from __future__ import annotations
 
@@ -30,11 +30,16 @@ REQUIRED_FILES = {
     "uv.lock",
     "src/pelican_engineering_theme/__init__.py",
     "src/pelican_engineering_theme/theme/templates/base.html",
+    "src/pelican_engineering_theme/theme/templates/includes/theme-toggle.html",
     "src/pelican_engineering_theme/theme/static/css/scaffold.css",
+    "src/pelican_engineering_theme/theme/static/js/theme.js",
     "examples/minimal/pelicanconf.py",
     "examples/minimal/content/hello.md",
     "tests/test_example_build.py",
     "tests/test_distribution_gate.py",
+    "tests/test_color_mode_contract.py",
+    "tests/test_browser_acceptance.py",
+    ".github/workflows/browser.yml",
 }
 
 FORBIDDEN_ROOT_IMPLEMENTATION_PATHS = {
@@ -48,11 +53,14 @@ FORBIDDEN_ROOT_IMPLEMENTATION_PATHS = {
 
 FORBIDDEN_THEME_ASSET_SUFFIXES = {
     ".eot",
-    ".js",
     ".otf",
     ".ttf",
     ".woff",
     ".woff2",
+}
+
+ALLOWED_THEME_JAVASCRIPT = {
+    "src/pelican_engineering_theme/theme/static/js/theme.js",
 }
 
 REQUIRED_TEXT = {
@@ -75,6 +83,8 @@ REQUIRED_TEXT = {
         "site_footer",
         "--pet-color-bg",
         "--pet-font-mono",
+        'html[data-theme="dark"]',
+        "localStorage",
     ),
     "docs/contracts/notebook-html-v1.md": (
         "plugin003-nbconvert-basic-v1",
@@ -93,6 +103,18 @@ REQUIRED_TEXT = {
 
 MARKDOWN_LINK = re.compile(r"(?<!!)\[[^\]]+\]\(([^)]+)\)")
 EMAIL = re.compile(r"(?<![\w.+-])[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}(?![\w.-])")
+
+FORBIDDEN_RUNTIME_TEXT = (
+    "EventSource",
+    "WebSocket",
+    "XMLHttpRequest",
+    "analytics.",
+    "fetch(",
+    "google-analytics",
+    "googletagmanager",
+    "gtag(",
+    "sendBeacon",
+)
 
 
 def markdown_files() -> list[Path]:
@@ -150,11 +172,20 @@ def validate_scope(errors: list[str]) -> None:
 
     theme_root = ROOT / "src/pelican_engineering_theme/theme"
     if theme_root.is_dir():
+        javascript: set[str] = set()
         for path in theme_root.rglob("*"):
+            relative = str(path.relative_to(ROOT))
+            if path.is_file() and path.suffix.lower() == ".js":
+                javascript.add(relative)
             if path.is_file() and path.suffix.lower() in FORBIDDEN_THEME_ASSET_SUFFIXES:
                 errors.append(
                     f"forbidden bundled runtime asset: {path.relative_to(ROOT)}"
                 )
+        if javascript != ALLOWED_THEME_JAVASCRIPT:
+            errors.append(
+                "first-party theme JavaScript must contain only "
+                f"{sorted(ALLOWED_THEME_JAVASCRIPT)}, found {sorted(javascript)}"
+            )
 
 
 def validate_required_text(errors: list[str]) -> None:
@@ -197,6 +228,26 @@ def validate_privacy(errors: list[str]) -> None:
             errors.append(f"{path.relative_to(ROOT)}: email address is not allowed")
 
 
+def validate_runtime_boundaries(errors: list[str]) -> None:
+    theme_root = ROOT / "src/pelican_engineering_theme/theme"
+    css = theme_root / "static/css/scaffold.css"
+    script = theme_root / "static/js/theme.js"
+    base = theme_root / "templates/base.html"
+    if css.is_file():
+        css_text = css.read_text(encoding="utf-8")
+        for forbidden in ("@import", "http://", "https://"):
+            if forbidden in css_text:
+                errors.append(f"{css.relative_to(ROOT)}: forbidden text {forbidden!r}")
+    if script.is_file() and base.is_file():
+        runtime = script.read_text(encoding="utf-8") + base.read_text(encoding="utf-8")
+        for forbidden in FORBIDDEN_RUNTIME_TEXT:
+            if forbidden in runtime:
+                errors.append(
+                    f"theme runtime contains forbidden network/analytics text "
+                    f"{forbidden!r}"
+                )
+
+
 def main() -> int:
     errors: list[str] = []
     validate_required_files(errors)
@@ -204,13 +255,14 @@ def main() -> int:
     validate_required_text(errors)
     validate_local_links(errors)
     validate_privacy(errors)
+    validate_runtime_boundaries(errors)
 
     if errors:
         for error in errors:
             print(f"ERROR: {error}")
         return 1
 
-    print("THEME-001 contracts and THEME-002 boundary validation passed")
+    print("Foundation, package scope, privacy, and runtime validation passed")
     return 0
 
 

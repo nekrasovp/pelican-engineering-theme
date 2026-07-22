@@ -1,7 +1,8 @@
 # Contributing
 
-This repository contains an unreleased package scaffold. Final presentation and
-behavior belong to later reviewed changes.
+This repository contains an unreleased theme package. The color-mode foundation
+is implemented; a reusable site shell and real-site integration belong to later
+reviewed changes.
 
 ## Start with an issue
 
@@ -39,3 +40,15 @@ uv run --locked --all-groups python scripts/verify_distribution.py dist
 
 Then run `scripts/verify_external_install.py` against the built wheel. These
 checks do not imply that a package or release is available from PyPI.
+
+Color-mode changes also require the isolated real-browser proof:
+
+```sh
+uv run --locked --all-groups playwright install chromium
+PET_RUN_BROWSER=1 uv run --locked --all-groups \
+  pytest -m browser tests/test_browser_acceptance.py
+```
+
+Chromium is a development/CI dependency and must not become a theme runtime
+dependency. Review the generated screenshots at their original resolution;
+browser-green remains executor evidence rather than user visual acceptance.

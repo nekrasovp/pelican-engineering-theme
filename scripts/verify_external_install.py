@@ -70,6 +70,7 @@ def main() -> int:
             "index.html",
             "small-technical-note.html",
             "theme/css/scaffold.css",
+            "theme/js/theme.js",
         }
         missing = [
             output

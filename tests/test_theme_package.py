@@ -18,7 +18,9 @@ REQUIRED_THEME_FILES = {
     "templates/period_archives.html",
     "templates/tag.html",
     "templates/tags.html",
+    "templates/includes/theme-toggle.html",
     "static/css/scaffold.css",
+    "static/js/theme.js",
 }
 
 PUBLIC_BLOCKS = (
@@ -70,11 +72,19 @@ def test_scaffold_asset_respects_runtime_asset_boundary() -> None:
     theme_path = pelican_engineering_theme.get_theme_path()
     packaged_files = [path for path in theme_path.rglob("*") if path.is_file()]
 
+    assert {
+        str(path.relative_to(theme_path))
+        for path in packaged_files
+        if path.suffix.lower() == ".js"
+    } == {"static/js/theme.js"}
     assert not any(
-        path.suffix.lower() in {".js", ".woff", ".woff2", ".ttf", ".otf", ".eot"}
+        path.suffix.lower() in {".woff", ".woff2", ".ttf", ".otf", ".eot"}
         for path in packaged_files
     )
     css = (theme_path / "static/css/scaffold.css").read_text(encoding="utf-8")
+    javascript = (theme_path / "static/js/theme.js").read_text(encoding="utf-8")
     assert "@import" not in css
     assert "http://" not in css
     assert "https://" not in css
+    assert "http://" not in javascript
+    assert "https://" not in javascript
