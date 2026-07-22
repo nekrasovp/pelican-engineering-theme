@@ -7,6 +7,24 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+EXTERNAL_NOTEBOOK_FIXTURE = (
+    ROOT / "tests/fixtures/plugin003-nbconvert-basic-v1/representative.fragment.html"
+)
+
+
+def add_external_notebook_contract_article(example: Path) -> Path:
+    """Add the exact vendored fragment as trusted content without conversion."""
+    metadata = (
+        b"Title: External Notebook Contract Round Trip\n"
+        b"Date: 2026-07-22\n"
+        b"Slug: external-notebook-contract\n"
+        b"Status: hidden\n"
+        b"Jupyter_Notebook: true\n"
+        b"Notebook_Html_Contract: nbconvert-basic.v1\n\n"
+    )
+    target = example / "content/external-notebook-contract.md"
+    target.write_bytes(metadata + EXTERNAL_NOTEBOOK_FIXTURE.read_bytes())
+    return target
 
 
 def build_example(name: str, target: Path) -> Path:

@@ -83,8 +83,10 @@ def main() -> int:
                         "archives.html",
                         "authors.html",
                         "categories.html",
+                        "downloads/theme006-notebook.ipynb",
                         "index2.html",
                         "index3.html",
+                        "notebook-presentation.html",
                         "pages/about.html",
                         "tags.html",
                     }
@@ -98,6 +100,22 @@ def main() -> int:
                 raise RuntimeError(
                     f"external {example_name} build is missing: {missing}"
                 )
+            if example_name == "full":
+                notebook_markup = (
+                    example_path / "output/notebook-presentation.html"
+                ).read_text(encoding="utf-8")
+                if not all(
+                    marker in notebook_markup
+                    for marker in (
+                        "pet-notebook-document",
+                        "pet-notebook-region",
+                        "pet-notebook-source-link",
+                        "downloads/theme006-notebook.ipynb",
+                    )
+                ):
+                    raise RuntimeError(
+                        "external full build is missing notebook presentation"
+                    )
             run(
                 [
                     str(python),

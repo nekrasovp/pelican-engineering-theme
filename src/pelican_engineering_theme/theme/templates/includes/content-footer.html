@@ -2,7 +2,19 @@
 {% set pet_related_posts = pet_footer_content.related_posts | default((), true) | selectattr('title') | selectattr('url') | list if pet_footer_content else [] %}
 {% set pet_source_url = pet_footer_content.source_url | default('', true) if pet_footer_content else '' %}
 {% set pet_source_url_valid = pet_source_url is string and (pet_source_url.startswith('https://') or pet_source_url.startswith('http://') or (pet_source_url.startswith('/') and not pet_source_url.startswith('//')) or pet_source_url.startswith('./')) %}
-{% if pet_related_posts or pet_source_url_valid %}
+{% set pet_notebook_marker = pet_footer_content.jupyter_notebook | default(false) if pet_footer_content else false %}
+{% set pet_notebook_contract = pet_footer_content.notebook_html_contract | default('') if pet_footer_content else '' %}
+{% set pet_nb_path = pet_footer_content.nb_path | default('', true) if pet_footer_content else '' %}
+{% set pet_nb_segments = pet_nb_path.split('/') if pet_nb_path is string else [] %}
+{% set pet_notebook_marker_valid = pet_notebook_marker is sameas true or (pet_notebook_marker is string and (pet_notebook_marker | lower) == 'true') %}
+{% set pet_nb_path_valid = pet_notebook_marker_valid and pet_notebook_contract == 'nbconvert-basic.v1' and pet_nb_path is string and pet_nb_path and pet_nb_path == pet_nb_path.strip() and (pet_nb_path | lower).endswith('.ipynb') and not pet_nb_path.startswith('/') and not pet_nb_path.startswith('./') and not pet_nb_path.startswith('../') and '' not in pet_nb_segments and '.' not in pet_nb_segments and '..' not in pet_nb_segments and ':' not in pet_nb_path and '%' not in pet_nb_path and '\\' not in pet_nb_path and '"' not in pet_nb_path and "'" not in pet_nb_path and '<' not in pet_nb_path and '>' not in pet_nb_path and ' ' not in pet_nb_path and '\t' not in pet_nb_path and '\r' not in pet_nb_path and '\n' not in pet_nb_path %}
+{% set pet_notebook_siteurl = SITEURL | default('', true) %}
+{% set pet_notebook_siteurl_http = pet_notebook_siteurl is string and (pet_notebook_siteurl.startswith('https://') or pet_notebook_siteurl.startswith('http://')) %}
+{% set pet_notebook_siteurl_tail = pet_notebook_siteurl.split('://', 1)[1] if pet_notebook_siteurl_http else '' %}
+{% set pet_notebook_siteurl_valid = pet_notebook_siteurl is string and (not pet_notebook_siteurl or pet_notebook_siteurl == '.' or (pet_notebook_siteurl_http and pet_notebook_siteurl_tail and not pet_notebook_siteurl_tail.startswith('/'))) and '\\' not in pet_notebook_siteurl and '%' not in pet_notebook_siteurl and '?' not in pet_notebook_siteurl and '#' not in pet_notebook_siteurl and '@' not in pet_notebook_siteurl and '"' not in pet_notebook_siteurl and "'" not in pet_notebook_siteurl and '<' not in pet_notebook_siteurl and '>' not in pet_notebook_siteurl and ' ' not in pet_notebook_siteurl and '\t' not in pet_notebook_siteurl and '\r' not in pet_notebook_siteurl and '\n' not in pet_notebook_siteurl %}
+{% set pet_notebook_source_valid = pet_nb_path_valid and pet_notebook_siteurl_valid %}
+{% set pet_notebook_source_url = pet_notebook_siteurl.rstrip('/') ~ '/' ~ pet_nb_path if pet_notebook_source_valid else '' %}
+{% if pet_related_posts or pet_source_url_valid or pet_notebook_source_valid %}
   <div class="pet-content-footer">
     {% if pet_related_posts %}
       <nav class="pet-related-posts" aria-labelledby="pet-related-posts-title">
@@ -12,6 +24,9 @@
     {% endif %}
     {% if pet_source_url_valid %}
       <p class="pet-source-link"><a href="{{ pet_source_url | forceescape }}">{{ pet_footer_content.source_label | default('View source', true) | forceescape }}</a></p>
+    {% endif %}
+    {% if pet_notebook_source_valid %}
+      <p class="pet-notebook-source-link"><a href="{{ pet_notebook_source_url | forceescape }}" download>View or download source notebook</a></p>
     {% endif %}
   </div>
 {% endif %}

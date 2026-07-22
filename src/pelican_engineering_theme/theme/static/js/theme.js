@@ -8,6 +8,42 @@
   var button = document.querySelector("[data-pet-theme-toggle]");
   var themeColor = document.querySelector("[data-pet-theme-color]");
 
+  function enhanceNotebookTableScrollers() {
+    var tables = document.querySelectorAll(
+      ".pet-notebook-document .pet-prose .output_html table"
+    );
+
+    tables.forEach(function (table) {
+      var scroller = table.closest(".output_html");
+      if (!scroller) {
+        return;
+      }
+
+      var overflows = scroller.scrollWidth > scroller.clientWidth + 1;
+      if (overflows) {
+        var caption = table.querySelector("caption");
+        var captionText = caption ? caption.textContent.trim() : "";
+        scroller.dataset.petTableScroller = "true";
+        scroller.setAttribute("role", "region");
+        scroller.setAttribute("tabindex", "0");
+        scroller.setAttribute(
+          "aria-label",
+          captionText
+            ? "Scrollable notebook table: " + captionText
+            : "Scrollable notebook table output"
+        );
+      } else if (scroller.dataset.petTableScroller === "true") {
+        delete scroller.dataset.petTableScroller;
+        scroller.removeAttribute("role");
+        scroller.removeAttribute("tabindex");
+        scroller.removeAttribute("aria-label");
+      }
+    });
+  }
+
+  enhanceNotebookTableScrollers();
+  window.addEventListener("resize", enhanceNotebookTableScrollers);
+
   if (!button) {
     return;
   }

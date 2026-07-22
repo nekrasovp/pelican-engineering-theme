@@ -19,6 +19,7 @@ PAGE_SAVE_AS = "pages/{slug}.html"
 RELATIVE_URLS = True
 DEFAULT_PAGINATION = 2
 TEMPLATE_PAGES = {"404.html": "404.html"}
+STATIC_PATHS = ("downloads",)
 
 ENGINEERING_THEME_BRAND_LABEL = "Systems Journal"
 ENGINEERING_THEME_BRAND_URL = "/"

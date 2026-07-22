@@ -1,5 +1,9 @@
 {% extends "base.html" %}
+{% set pet_notebook_marker = page.jupyter_notebook | default(false) %}
+{% set pet_notebook_contract = page.notebook_html_contract | default('') %}
+{% set pet_is_notebook = (pet_notebook_marker is sameas true or (pet_notebook_marker is string and (pet_notebook_marker | lower) == 'true')) and pet_notebook_contract == 'nbconvert-basic.v1' %}
 {% block title %}{{ page.title | striptags | forceescape }} — {{ SITENAME | forceescape }}{% endblock title %}
+{% block body_class %}{{ super() }}{% if pet_is_notebook %} pet-notebook-document{% endif %}{% endblock body_class %}
 {% block page_class %}{{ super() }} pet-content-page{% endblock page_class %}
 {% block content_header %}
   <header class="pet-content-header">
@@ -9,5 +13,5 @@
     {% set pet_status_content = page %}{% include "includes/content-status.html" %}
   </header>
 {% endblock content_header %}
-{% block content %}<article class="pet-prose">{{ page.content }}</article>{% endblock content %}
+{% block content %}<article class="pet-prose{% if pet_is_notebook %} pet-notebook-region{% endif %}">{{ page.content }}</article>{% endblock content %}
 {% block content_footer %}{% set pet_footer_content = page %}{% include "includes/content-footer.html" %}{% endblock content_footer %}
