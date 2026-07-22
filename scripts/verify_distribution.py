@@ -57,9 +57,12 @@ REQUIRED_SDIST_SUPPORT_FILES = {
     ".github/workflows/package.yml",
     "CHANGELOG.md",
     "CONTRIBUTING.md",
+    "LICENSES/Apache-2.0.txt",
+    "LICENSES/BSD-3-Clause-nbconvert.txt",
     "MANIFEST.in",
     "README.md",
     "SECURITY.md",
+    "THIRD_PARTY.md",
     "docs/contracts/customization-v1.md",
     "docs/contracts/notebook-html-v1.md",
     "docs/decisions/0001-identity-license-and-boundaries.md",
@@ -72,8 +75,10 @@ REQUIRED_SDIST_SUPPORT_FILES = {
     "examples/full/content/long-technical-title.md",
     "examples/full/content/multilingual-guide-ru.md",
     "examples/full/content/multilingual-guide.md",
+    "examples/full/content/notebook-presentation.md",
     "examples/full/content/pages/about.md",
     "examples/full/content/source-provenance.md",
+    "examples/full/content/downloads/theme006-notebook.ipynb",
     "examples/full/pelicanconf.py",
     "examples/full/templates/index.html",
     "package-lock.json",
@@ -81,6 +86,7 @@ REQUIRED_SDIST_SUPPORT_FILES = {
     "pyproject.toml",
     "scripts/__init__.py",
     "scripts/validate_foundation.py",
+    "scripts/validate_notebook_contract.py",
     "scripts/validate_content.py",
     "scripts/validate_shell.py",
     "scripts/verify_clean_sdist.py",
@@ -92,11 +98,41 @@ REQUIRED_SDIST_SUPPORT_FILES = {
     "tests/test_distribution_gate.py",
     "tests/test_color_mode_contract.py",
     "tests/test_content_contract.py",
+    "tests/fixtures/plugin003-nbconvert-basic-v1/representative.fragment.html",
+    "tests/test_notebook_contract.py",
     "tests/test_browser_acceptance.py",
     "tests/test_example_build.py",
     "tests/test_shell_contract.py",
     "tests/test_theme_package.py",
 }
+WHEEL_METADATA_FILES = {
+    f"{NORMALIZED_NAME}-{VERSION}.dist-info/METADATA",
+    f"{NORMALIZED_NAME}-{VERSION}.dist-info/RECORD",
+    f"{NORMALIZED_NAME}-{VERSION}.dist-info/WHEEL",
+    f"{NORMALIZED_NAME}-{VERSION}.dist-info/licenses/LICENSE",
+    f"{NORMALIZED_NAME}-{VERSION}.dist-info/top_level.txt",
+}
+SDIST_GENERATED_FILES = {
+    "LICENSE",
+    "PKG-INFO",
+    "setup.cfg",
+    f"src/{NORMALIZED_NAME}.egg-info/PKG-INFO",
+    f"src/{NORMALIZED_NAME}.egg-info/SOURCES.txt",
+    f"src/{NORMALIZED_NAME}.egg-info/dependency_links.txt",
+    f"src/{NORMALIZED_NAME}.egg-info/requires.txt",
+    f"src/{NORMALIZED_NAME}.egg-info/top_level.txt",
+}
+EXPECTED_WHEEL_FILES = REQUIRED_PACKAGE_FILES | WHEEL_METADATA_FILES
+EXPECTED_SDIST_FILES = (
+    REQUIRED_SDIST_SUPPORT_FILES
+    | {f"src/{required}" for required in REQUIRED_PACKAGE_FILES}
+    | SDIST_GENERATED_FILES
+)
+
+assert len(REQUIRED_PACKAGE_FILES) == 32
+assert len(REQUIRED_SDIST_SUPPORT_FILES) == 52
+assert len(EXPECTED_WHEEL_FILES) == 37
+assert len(EXPECTED_SDIST_FILES) == 92
 
 FORBIDDEN_WHEEL_PREFIXES = ("examples/", "node_modules/", "scripts/", "tests/")
 FORBIDDEN_WHEEL_FILES = {"package-lock.json", "package.json"}
@@ -121,6 +157,33 @@ def package_inventory_errors(members: Iterable[str], prefix: str = "") -> list[s
         f"unexpected runtime package file: {member}"
         for member in sorted(actual - expected)
     ]
+
+
+def wheel_inventory_errors(members: Iterable[str]) -> list[str]:
+    """Require equality with the complete runtime-wheel allowlist."""
+    actual = set(members)
+    missing = [
+        f"missing exact wheel file: {member}"
+        for member in sorted(EXPECTED_WHEEL_FILES - actual)
+    ]
+    unexpected = [
+        f"unexpected wheel file: {member}"
+        for member in sorted(actual - EXPECTED_WHEEL_FILES)
+    ]
+    return missing + unexpected
+
+
+def sdist_inventory_errors(members: Iterable[str], prefix: str = "") -> list[str]:
+    """Require equality with the complete self-testing-sdist allowlist."""
+    actual = set(members)
+    expected = {f"{prefix}{required}" for required in EXPECTED_SDIST_FILES}
+    missing = [
+        f"missing exact sdist file: {member}" for member in sorted(expected - actual)
+    ]
+    unexpected = [
+        f"unexpected sdist file: {member}" for member in sorted(actual - expected)
+    ]
+    return missing + unexpected
 
 
 def tar_file_names(members: Iterable[tarfile.TarInfo]) -> list[str]:
@@ -190,6 +253,7 @@ def verify_wheel(path: Path) -> list[str]:
         errors.extend(package_data_errors(members))
         errors.extend(package_inventory_errors(members))
         errors.extend(wheel_scope_errors(members))
+        errors.extend(wheel_inventory_errors(members))
         metadata_path = f"{NORMALIZED_NAME}-{VERSION}.dist-info/METADATA"
         if metadata_path not in members:
             errors.append(f"missing wheel metadata: {metadata_path}")
@@ -213,6 +277,7 @@ def verify_sdist(path: Path) -> list[str]:
         errors.extend(package_inventory_errors(members, prefix=package_prefix))
         errors.extend(sdist_support_errors(members, prefix=archive_prefix))
         errors.extend(sdist_scope_errors(members))
+        errors.extend(sdist_inventory_errors(members, prefix=archive_prefix))
         metadata_path = f"{archive_prefix}PKG-INFO"
         try:
             metadata_member = archive.extractfile(metadata_path)
@@ -259,7 +324,9 @@ def main() -> int:
     print(f"Verified {wheels[0].name} and {sdists[0].name}")
     print(f"Identity: {NAME} {VERSION}; license: MIT")
     print(f"Required package files: {len(REQUIRED_PACKAGE_FILES)}")
-    print(f"Required sdist support files: {len(REQUIRED_SDIST_SUPPORT_FILES)}")
+    print(f"Exact wheel archive files: {len(EXPECTED_WHEEL_FILES)}")
+    print(f"Exact sdist support files: {len(REQUIRED_SDIST_SUPPORT_FILES)}")
+    print(f"Exact sdist archive files: {len(EXPECTED_SDIST_FILES)}")
     return 0
 
 

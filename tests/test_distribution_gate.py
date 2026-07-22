@@ -5,13 +5,17 @@ import tarfile
 import pytest
 
 from scripts.verify_distribution import (
+    EXPECTED_SDIST_FILES,
+    EXPECTED_WHEEL_FILES,
     REQUIRED_PACKAGE_FILES,
     REQUIRED_SDIST_SUPPORT_FILES,
     package_data_errors,
     package_inventory_errors,
+    sdist_inventory_errors,
     sdist_scope_errors,
     sdist_support_errors,
     tar_file_names,
+    wheel_inventory_errors,
     wheel_scope_errors,
 )
 
@@ -43,17 +47,25 @@ NEW_SDIST_SUPPORT_FILES = (
     "examples/full/content/long-technical-title.md",
     "examples/full/content/multilingual-guide-ru.md",
     "examples/full/content/multilingual-guide.md",
+    "examples/full/content/notebook-presentation.md",
     "examples/full/content/pages/about.md",
     "examples/full/content/source-provenance.md",
+    "examples/full/content/downloads/theme006-notebook.ipynb",
+    "LICENSES/Apache-2.0.txt",
+    "LICENSES/BSD-3-Clause-nbconvert.txt",
     "examples/full/pelicanconf.py",
     "examples/full/templates/index.html",
     "package-lock.json",
     "package.json",
     "scripts/validate_shell.py",
     "scripts/validate_content.py",
+    "scripts/validate_notebook_contract.py",
+    "THIRD_PARTY.md",
     "tests/site_build.py",
     "tests/test_shell_contract.py",
     "tests/test_content_contract.py",
+    "tests/fixtures/plugin003-nbconvert-basic-v1/representative.fragment.html",
+    "tests/test_notebook_contract.py",
 )
 
 
@@ -132,6 +144,38 @@ def test_exact_package_inventory_rejects_internal_test_payload() -> None:
     assert package_inventory_errors(members) == [
         "unexpected runtime package file: "
         "pelican_engineering_theme/tests/test_internal.py"
+    ]
+
+
+def test_exact_wheel_archive_rejects_arbitrary_top_level_payload() -> None:
+    members = EXPECTED_WHEEL_FILES | {"undeclared-build-note.txt"}
+    assert wheel_inventory_errors(members) == [
+        "unexpected wheel file: undeclared-build-note.txt"
+    ]
+
+
+def test_exact_wheel_archive_rejects_missing_generated_metadata() -> None:
+    required = "pelican_engineering_theme-0.0.0.dev0.dist-info/WHEEL"
+    assert wheel_inventory_errors(EXPECTED_WHEEL_FILES - {required}) == [
+        f"missing exact wheel file: {required}"
+    ]
+
+
+def test_exact_sdist_archive_rejects_arbitrary_source_payload() -> None:
+    prefix = "pelican_engineering_theme-0.0.0.dev0/"
+    members = {f"{prefix}{member}" for member in EXPECTED_SDIST_FILES}
+    members.add(f"{prefix}scratch/undeclared.txt")
+    assert sdist_inventory_errors(members, prefix=prefix) == [
+        f"unexpected sdist file: {prefix}scratch/undeclared.txt"
+    ]
+
+
+def test_exact_sdist_archive_rejects_missing_generated_metadata() -> None:
+    prefix = "pelican_engineering_theme-0.0.0.dev0/"
+    required = "src/pelican_engineering_theme.egg-info/SOURCES.txt"
+    members = {f"{prefix}{member}" for member in EXPECTED_SDIST_FILES - {required}}
+    assert sdist_inventory_errors(members, prefix=prefix) == [
+        f"missing exact sdist file: {prefix}{required}"
     ]
 
 

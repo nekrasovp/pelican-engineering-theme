@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
 import threading
 from functools import partial
@@ -14,12 +15,16 @@ from typing import TYPE_CHECKING, Any, cast
 import pytest
 
 from scripts.validate_shell import focus_order_errors
-from tests.site_build import build_example
+from tests.site_build import (
+    ROOT,
+    add_external_notebook_contract_article,
+    build_copied_example,
+    build_example,
+)
 
 if TYPE_CHECKING:
     from playwright.sync_api import Browser, BrowserContext, Page
 
-ROOT = Path(__file__).resolve().parents[1]
 STORAGE_KEY = "pelican-engineering-theme"
 LIGHT_BG = "rgb(247, 248, 243)"
 DARK_BG = "rgb(16, 23, 18)"
@@ -105,6 +110,31 @@ def assert_light(page: Page) -> None:
 def assert_dark(page: Page) -> None:
     assert page.locator("html").get_attribute("data-theme") == "dark"
     assert background(page) == DARK_BG
+
+
+def rgb_components(value: str) -> tuple[int, int, int]:
+    match = re.fullmatch(r"rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*[\d.]+)?\)", value)
+    assert match is not None, value
+    red, green, blue = (int(component) for component in match.groups())
+    return red, green, blue
+
+
+def contrast_ratio(foreground: str, background_color: str) -> float:
+    def luminance(color: str) -> float:
+        channels = []
+        for component in rgb_components(color):
+            normalized = component / 255
+            channels.append(
+                normalized / 12.92
+                if normalized <= 0.04045
+                else ((normalized + 0.055) / 1.055) ** 2.4
+            )
+        return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2]
+
+    light, dark = sorted(
+        (luminance(foreground), luminance(background_color)), reverse=True
+    )
+    return (light + 0.05) / (dark + 0.05)
 
 
 def open_page(context: BrowserContext, url: str) -> Page:
@@ -364,12 +394,39 @@ def overflowing_elements(page: Page) -> list[str]:
               for (const selector of selectors) {
                 for (const element of document.querySelectorAll(selector)) {
                   const box = element.getBoundingClientRect();
-                  if (box.width > 0 && (box.left < -1 || box.right > innerWidth + 1)) {
+                  const region = element.closest(".output_html");
+                  const containedByScroller = region
+                    && region.scrollWidth > region.clientWidth + 1
+                    && region.getBoundingClientRect().left >= -1
+                    && region.getBoundingClientRect().right <= innerWidth + 1;
+                  if (box.width > 0
+                      && (box.left < -1 || box.right > innerWidth + 1)
+                      && !containedByScroller) {
                     failures.push(`${selector}:${box.left}:${box.right}`);
                   }
                 }
               }
               return failures;
+            }
+            """
+        ),
+    )
+
+
+def notebook_cell_left_edges(page: Page) -> dict[str, float]:
+    """Return stable left edges for cells neighboring the wide output."""
+    return cast(
+        dict[str, float],
+        page.evaluate(
+            """
+            () => {
+              const left = selector => document
+                .querySelector(selector)
+                .getBoundingClientRect().left;
+              return {
+                error: left("#theme006-error"),
+                stream: left("#theme006-stream")
+              };
             }
             """
         ),
@@ -470,6 +527,409 @@ def content_surface_cases(browser: Browser, full_url: str) -> list[str]:
     finally:
         context.close()
     return cases
+
+
+def notebook_surface_cases(
+    browser: Browser, full_url: str
+) -> tuple[list[str], dict[str, str | float]]:
+    """Exercise frozen notebook presentation and its local table scroller."""
+    path = f"{full_url}/notebook-presentation.html"
+    cases: list[str] = []
+    visual: dict[str, str | float] = {}
+    for width, height in ((390, 844), (768, 1024), (1440, 1000)):
+        context = context_with_storage(
+            browser,
+            viewport={"width": width, "height": height},
+            reduced_motion="reduce",
+        )
+        try:
+            page = open_page(context, path)
+            assert overflowing_elements(page) == []
+            assert page.locator(".pet-notebook-region").count() == 1
+            cases.append(f"notebook content fits {width}x{height}")
+        finally:
+            context.close()
+
+    keyboard = context_with_storage(
+        browser, viewport={"width": 390, "height": 844}, reduced_motion="reduce"
+    )
+    try:
+        page = open_page(keyboard, path)
+        region = page.locator(".pet-notebook-region")
+        assert region.get_attribute("role") is None
+        assert region.get_attribute("aria-label") is None
+        assert region.get_attribute("tabindex") is None
+        region_dimensions = cast(
+            dict[str, int],
+            region.evaluate(
+                """
+                element => ({
+                  client: element.clientWidth,
+                  scroll: element.scrollWidth,
+                  scrollLeft: element.scrollLeft
+                })
+                """
+            ),
+        )
+        assert region_dimensions == {
+            "client": region_dimensions["client"],
+            "scroll": region_dimensions["client"],
+            "scrollLeft": 0,
+        }
+
+        table_scroller = page.locator('[data-pet-table-scroller="true"]')
+        assert table_scroller.count() == 1
+        assert table_scroller.get_attribute("role") == "region"
+        assert table_scroller.get_attribute("tabindex") == "0"
+        assert table_scroller.get_attribute("aria-label") == (
+            "Scrollable notebook table: Wide static build matrix"
+        )
+        table_dimensions = cast(
+            dict[str, int],
+            table_scroller.evaluate(
+                """
+                element => ({
+                  client: element.clientWidth,
+                  scroll: element.scrollWidth
+                })
+                """
+            ),
+        )
+        assert table_dimensions["scroll"] > table_dimensions["client"]
+        edges_before = notebook_cell_left_edges(page)
+        assert all(edge >= 0 for edge in edges_before.values())
+        table_scroller.focus()
+        assert page.evaluate(
+            "() => document.activeElement.dataset.petTableScroller === 'true'"
+        )
+        page.keyboard.press("ArrowRight")
+        page.wait_for_timeout(100)
+        assert cast(int, table_scroller.evaluate("element => element.scrollLeft")) > 0
+        assert cast(int, region.evaluate("element => element.scrollLeft")) == 0
+        edges_after = notebook_cell_left_edges(page)
+        assert edges_after == edges_before
+        cases.append("keyboard moves only the labelled local table scroller at 390px")
+
+        assert page.locator(".cell").count() >= 9
+        assert page.locator(".output_stream").count() >= 1
+        assert page.locator(".output_error").count() >= 1
+        assert page.locator('[data-pet-dataframe="wide"]').count() == 1
+        assert page.locator(".output_png").count() >= 1
+        assert page.locator(".output_svg").count() >= 1
+        assert page.locator('[data-pet-rich-output="trusted"]').count() == 1
+        assert page.locator(".math").count() == 1
+        assert page.locator("figure figcaption").count() == 1
+        assert page.locator(".plotly-graph-div").count() == 1
+        source = page.get_by_role("link", name="View or download source notebook")
+        assert source.get_attribute("href") == "./downloads/theme006-notebook.ipynb"
+        assert source.get_attribute("download") == ""
+        cases.append("notebook states and safe source download remain present")
+    finally:
+        keyboard.close()
+
+    no_javascript = context_with_storage(
+        browser,
+        viewport={"width": 390, "height": 844},
+        reduced_motion="reduce",
+        java_script_enabled=False,
+    )
+    try:
+        page = open_page(no_javascript, path)
+        assert overflowing_elements(page) == []
+        region = page.locator(".pet-notebook-region")
+        native_scroller = page.locator("#theme006-dataframe .output_html")
+        assert native_scroller.get_attribute("data-pet-table-scroller") is None
+        assert native_scroller.get_attribute("tabindex") is None
+        native_dimensions = cast(
+            dict[str, int],
+            native_scroller.evaluate(
+                """
+                element => ({
+                  client: element.clientWidth,
+                  scroll: element.scrollWidth
+                })
+                """
+            ),
+        )
+        assert native_dimensions["scroll"] > native_dimensions["client"]
+        edges_before = notebook_cell_left_edges(page)
+        reached_scroller = False
+        for _ in range(40):
+            page.keyboard.press("Tab")
+            reached_scroller = cast(
+                bool,
+                native_scroller.evaluate(
+                    "element => document.activeElement === element"
+                ),
+            )
+            if reached_scroller:
+                break
+        assert reached_scroller
+        page.keyboard.press("ArrowRight")
+        page.wait_for_timeout(100)
+        native_scroll_left = cast(
+            int, native_scroller.evaluate("element => element.scrollLeft")
+        )
+        assert native_scroll_left > 0
+        assert cast(int, region.evaluate("element => element.scrollLeft")) == 0
+        edges_after = notebook_cell_left_edges(page)
+        assert edges_after == edges_before
+        visual.update(
+            {
+                "no_javascript_keyboard_scroll": "passed",
+                "no_javascript_table_scroll_left": float(native_scroll_left),
+            }
+        )
+        cases.append(
+            "no-JavaScript Chromium natively focuses and scrolls only the local table"
+        )
+    finally:
+        no_javascript.close()
+
+    exact_context = context_with_storage(
+        browser, viewport={"width": 390, "height": 844}, reduced_motion="reduce"
+    )
+    try:
+        external_requests: list[str] = []
+        page = exact_context.new_page()
+        page.on(
+            "request",
+            lambda request: (
+                external_requests.append(request.url)
+                if not request.url.startswith(
+                    ("http://127.0.0.1:", "http://localhost:")
+                )
+                else None
+            ),
+        )
+        page.goto(
+            f"{full_url}/external-notebook-contract.html",
+            wait_until="networkidle",
+        )
+        expected_ids = {
+            "cell-id=code-contract",
+            "cell-id=error-contract",
+            "cell-id=markdown-contract",
+            "cell-id=png-contract",
+            "cell-id=rich-contract",
+            "cell-id=svg-contract",
+            "cell-id=table-contract",
+        }
+        actual_ids = set(
+            cast(
+                list[str],
+                page.locator('[id^="cell-id="]').evaluate_all(
+                    "elements => elements.map(element => element.id)"
+                ),
+            )
+        )
+        assert actual_ids == expected_ids
+        assert page.locator(".cell").count() == 7
+        assert page.locator(".code_cell").count() == 6
+        assert page.locator(".text_cell").count() == 1
+        assert page.locator(".input_area").count() == 6
+        assert page.locator(".output_area").count() == 6
+        assert page.locator(".output_stream").count() == 1
+        assert page.locator(".output_error").count() == 1
+        assert page.locator(".output_png").count() == 1
+        assert page.locator(".output_svg").count() == 1
+        assert page.locator(".output_html").count() == 2
+        assert overflowing_elements(page) == []
+        assert external_requests == []
+        cases.append("exact vendored fragment survives browser layout with all states")
+    finally:
+        exact_context.close()
+
+    dark_context = context_with_storage(
+        browser,
+        stored="dark",
+        viewport={"width": 1440, "height": 1000},
+        reduced_motion="reduce",
+    )
+    try:
+        page = open_page(dark_context, path)
+        error_pre = page.locator(".output_error pre")
+        error_color = cast(
+            str, error_pre.evaluate("element => getComputedStyle(element).color")
+        )
+        error_background = cast(
+            str,
+            page.locator(".output_error").evaluate(
+                "element => getComputedStyle(element).backgroundColor"
+            ),
+        )
+        error_contrast = contrast_ratio(error_color, error_background)
+        assert error_contrast >= 4.5
+        image_background = cast(
+            str,
+            page.locator(".output_svg").evaluate(
+                "element => getComputedStyle(element).backgroundColor"
+            ),
+        )
+        assert image_background == "rgb(255, 255, 255)"
+        assert page.locator('.output_svg circle[fill="currentColor"]').count() == 3
+        assert page.locator('figure rect[fill="currentColor"]').count() == 3
+        visual.update(
+            {
+                "error_background": error_background,
+                "error_color": error_color,
+                "error_contrast": round(error_contrast, 2),
+                "image_mat_background": image_background,
+            }
+        )
+        cases.append("dark error and SVG/image treatments retain readable contrast")
+    finally:
+        dark_context.close()
+
+    printing = context_with_storage(
+        browser,
+        stored="dark",
+        viewport={"width": 1440, "height": 1000},
+        reduced_motion="reduce",
+    )
+    try:
+        page = open_page(printing, path)
+        page.emulate_media(media="print")
+        print_state = cast(
+            dict[str, str],
+            page.evaluate(
+                """
+                () => ({
+                  background: getComputedStyle(document.body).backgroundColor,
+                  codeBackground: getComputedStyle(
+                    document.querySelector("#theme006-stream .input_area")
+                  ).backgroundColor,
+                  codeColor: getComputedStyle(
+                    document.querySelector("#theme006-stream .input_area pre")
+                  ).color,
+                  overflow: getComputedStyle(
+                    document.querySelector(".pet-notebook-region")
+                  ).overflowX,
+                  stringColor: getComputedStyle(
+                    document.querySelector("#theme006-stream .s1")
+                  ).color,
+                  tableMinWidth: getComputedStyle(
+                    document.querySelector('[data-pet-dataframe="wide"]')
+                  ).minWidth
+                })
+                """
+            ),
+        )
+        assert print_state == {
+            "background": "rgb(255, 255, 255)",
+            "codeBackground": "rgb(242, 242, 242)",
+            "codeColor": "rgb(0, 0, 0)",
+            "overflow": "visible",
+            "stringColor": "rgb(20, 83, 35)",
+            "tableMinWidth": "0px",
+        }
+        print_code_contrast = contrast_ratio(
+            print_state["codeColor"], print_state["codeBackground"]
+        )
+        print_string_contrast = contrast_ratio(
+            print_state["stringColor"], print_state["codeBackground"]
+        )
+        assert print_code_contrast >= 4.5
+        assert print_string_contrast >= 4.5
+        visual.update(
+            {
+                "print_code_background": print_state["codeBackground"],
+                "print_code_color": print_state["codeColor"],
+                "print_code_contrast": round(print_code_contrast, 2),
+                "print_string_color": print_state["stringColor"],
+                "print_string_contrast": round(print_string_contrast, 2),
+            }
+        )
+        cases.append("print media fits wide data and keeps normal/string code readable")
+    finally:
+        printing.close()
+
+    assert len(cases) == 9
+    return cases, visual
+
+
+def capture_print_screenshot(
+    browser: Browser, base_url: str, artifact_root: Path
+) -> dict[str, str | int]:
+    context = context_with_storage(
+        browser,
+        stored="dark",
+        viewport={"width": 1440, "height": 1000},
+        device_scale_factor=1,
+        reduced_motion="reduce",
+    )
+    try:
+        page = open_page(context, f"{base_url}/notebook-presentation.html")
+        page.emulate_media(media="print")
+        target = artifact_root / "notebook-print-1440x1000.png"
+        page.screenshot(path=str(target), animations="disabled", full_page=True)
+        return {
+            "bytes": target.stat().st_size,
+            "file": target.name,
+            "media": "print",
+            "sha256": hashlib.sha256(target.read_bytes()).hexdigest(),
+            "theme_before_emulation": "dark",
+            "viewport_height": 1000,
+            "viewport_width": 1440,
+        }
+    finally:
+        context.close()
+
+
+def capture_notebook_state_screenshots(
+    browser: Browser, base_url: str, artifact_root: Path
+) -> list[dict[str, str | int]]:
+    records: list[dict[str, str | int]] = []
+    for theme in ("light", "dark"):
+        context = context_with_storage(
+            browser,
+            stored=theme,
+            viewport={"width": 390, "height": 844},
+            device_scale_factor=1,
+            reduced_motion="reduce",
+        )
+        try:
+            page = open_page(context, f"{base_url}/notebook-presentation.html")
+            dataframe = page.locator("#theme006-dataframe")
+            dataframe.scroll_into_view_if_needed()
+            page.evaluate("window.scrollBy(0, -220)")
+            region = page.locator(".pet-notebook-region")
+            table_scroller = page.locator('[data-pet-table-scroller="true"]')
+            table_scroll_left = cast(
+                int,
+                table_scroller.evaluate(
+                    """
+                    element => {
+                      element.scrollLeft = Math.min(180, element.scrollWidth);
+                      return element.scrollLeft;
+                    }
+                    """
+                ),
+            )
+            region_scroll_left = cast(
+                int, region.evaluate("element => element.scrollLeft")
+            )
+            assert table_scroll_left > 0
+            assert region_scroll_left == 0
+            filename = f"notebook-states-{theme}-390x844.png"
+            target = artifact_root / filename
+            page.screenshot(path=str(target), animations="disabled")
+            records.append(
+                {
+                    "bytes": target.stat().st_size,
+                    "capture": "error-and-wide-dataframe",
+                    "file": target.name,
+                    "region_scroll_left": region_scroll_left,
+                    "sha256": hashlib.sha256(target.read_bytes()).hexdigest(),
+                    "table_scroll_left": table_scroll_left,
+                    "theme": theme,
+                    "viewport_height": 844,
+                    "viewport_width": 390,
+                }
+            )
+        finally:
+            context.close()
+    return records
 
 
 def focus_and_skip_cases(browser: Browser, full_url: str) -> list[str]:
@@ -592,6 +1052,8 @@ def accessibility_case(
     return {
         "fixture": fixture,
         "url_path": url_path,
+        "viewport": page.viewport_size,
+        "theme": page.locator("html").get_attribute("data-theme") or "light",
         "engine": "axe-core",
         "engine_version": "4.12.1",
         "license": "MPL-2.0",
@@ -616,7 +1078,10 @@ def test_theme_color_mode_in_real_chromium(tmp_path: Path) -> None:
     artifact_root.mkdir(parents=True, exist_ok=True)
     assert AXE_PATH.is_file(), "run npm ci before browser acceptance"
     minimal_output = build_example("minimal", tmp_path)
-    full_output = build_example("full", tmp_path)
+    full_example = tmp_path / "full"
+    shutil.copytree(ROOT / "examples/full", full_example)
+    add_external_notebook_contract_article(full_example)
+    full_output = build_copied_example(full_example)
     minimal_server, minimal_thread, minimal_url = start_server(minimal_output)
     full_server, full_thread, full_url = start_server(full_output)
     try:
@@ -643,6 +1108,12 @@ def test_theme_color_mode_in_real_chromium(tmp_path: Path) -> None:
                 assert len(theme004_predecessor_cases) == 22
                 content_cases = content_surface_cases(browser, full_url)
                 cases.extend(content_cases)
+                theme005_predecessor_cases = list(cases)
+                assert len(theme005_predecessor_cases) == 44
+                notebook_cases, notebook_visual = notebook_surface_cases(
+                    browser, full_url
+                )
+                cases.extend(notebook_cases)
                 screenshots = capture_screenshots(
                     browser,
                     minimal_url,
@@ -680,6 +1151,26 @@ def test_theme_color_mode_in_real_chromium(tmp_path: Path) -> None:
                             themes=("light",),
                         )
                     )
+                theme005_predecessor_screenshots = list(screenshots)
+                assert len(theme005_predecessor_screenshots) == 36
+                screenshots.extend(
+                    capture_screenshots(
+                        browser,
+                        full_url,
+                        artifact_root,
+                        page_path="notebook-presentation.html",
+                        prefix="notebook-",
+                    )
+                )
+                notebook_state_screenshots = capture_notebook_state_screenshots(
+                    browser, full_url, artifact_root
+                )
+                screenshots.extend(notebook_state_screenshots)
+                print_screenshot = capture_print_screenshot(
+                    browser, full_url, artifact_root
+                )
+                screenshots.append(print_screenshot)
+                assert len(screenshots) == 45
                 accessibility: list[dict[str, Any]] = []
                 for fixture, url, url_path in (
                     (
@@ -701,9 +1192,16 @@ def test_theme_color_mode_in_real_chromium(tmp_path: Path) -> None:
                     ),
                     ("full-archive", f"{full_url}/archives.html", "/archives.html"),
                     ("full-404", f"{full_url}/404.html", "/404.html"),
+                    (
+                        "full-notebook",
+                        f"{full_url}/notebook-presentation.html",
+                        "/notebook-presentation.html",
+                    ),
                 ):
+                    width = 1440 if fixture == "full-notebook" else 390
+                    height = 1000 if fixture == "full-notebook" else 844
                     context = context_with_storage(
-                        browser, viewport={"width": 390, "height": 844}
+                        browser, viewport={"width": width, "height": height}
                     )
                     try:
                         accessibility.append(
@@ -711,6 +1209,22 @@ def test_theme_color_mode_in_real_chromium(tmp_path: Path) -> None:
                         )
                     finally:
                         context.close()
+                dark_notebook = context_with_storage(
+                    browser,
+                    stored="dark",
+                    viewport={"width": 1440, "height": 1000},
+                )
+                try:
+                    accessibility.append(
+                        accessibility_case(
+                            dark_notebook,
+                            f"{full_url}/notebook-presentation.html",
+                            "full-notebook-dark",
+                            "/notebook-presentation.html",
+                        )
+                    )
+                finally:
+                    dark_notebook.close()
             finally:
                 browser.close()
     finally:
@@ -735,7 +1249,15 @@ def test_theme_color_mode_in_real_chromium(tmp_path: Path) -> None:
         "theme004_predecessor_cases": theme004_predecessor_cases,
         "theme005_content_case_count": len(content_cases),
         "theme005_content_cases": content_cases,
+        "theme005_predecessor_case_count": len(theme005_predecessor_cases),
+        "theme005_predecessor_cases": theme005_predecessor_cases,
         "theme004_predecessor_screenshots": theme004_predecessor_screenshots,
+        "theme005_predecessor_screenshots": theme005_predecessor_screenshots,
+        "notebook_case_count": len(notebook_cases),
+        "notebook_cases": notebook_cases,
+        "notebook_visual": notebook_visual,
+        "notebook_state_screenshots": notebook_state_screenshots,
+        "print_screenshot": print_screenshot,
         "accessibility": accessibility,
         "timing": timing,
         "screenshots": screenshots,

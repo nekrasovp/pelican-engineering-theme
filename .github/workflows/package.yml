@@ -37,6 +37,11 @@ jobs:
         run: uv run --locked --all-groups mypy
       - name: Preserve foundation and scope boundaries
         run: uv run --locked --all-groups python scripts/validate_foundation.py
+      - name: Verify immutable notebook fragment input
+        run: >-
+          uv run --locked --all-groups python
+          scripts/validate_notebook_contract.py
+          tests/fixtures/plugin003-nbconvert-basic-v1/representative.fragment.html
 
   compatibility:
     name: Python ${{ matrix.python }} / Pelican ${{ matrix.pelican }}
@@ -218,6 +223,12 @@ jobs:
           test -f "${proof_root}/examples/full/output/pages/about.html"
           test -f "${proof_root}/examples/full/output/index2.html"
           test -f "${proof_root}/examples/full/output/index3.html"
+          test -f "${proof_root}/examples/full/output/notebook-presentation.html"
+          test -f "${proof_root}/examples/full/output/downloads/theme006-notebook.ipynb"
+          grep -q 'pet-notebook-region' \
+            "${proof_root}/examples/full/output/notebook-presentation.html"
+          grep -q 'pet-notebook-source-link' \
+            "${proof_root}/examples/full/output/notebook-presentation.html"
           "${proof_python}" -I "${artifact_root}/scripts/validate_shell.py" \
             "${proof_root}/examples/minimal/output" \
             "${proof_root}/examples/full/output"
