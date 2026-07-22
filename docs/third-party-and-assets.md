@@ -43,7 +43,7 @@ smaller and safer boundary.
 | --- | --- | --- |
 | [Pelican](https://github.com/getpelican/pelican/blob/3c69dc68d25a761911697467c765a16e68915c74/LICENSE) | AGPL-3.0 | Build/runtime tool; not bundled, copied, or redistributed by the theme foundation |
 | [Jinja](https://github.com/pallets/jinja/blob/5ef70112a1ff19c05324ff889dd30405b1002044/LICENSE.txt) | BSD-3-Clause | Template engine; not bundled or copied |
-| [PLUGIN-003 fixture source](https://github.com/nekrasovp/pelican-jupyter/blob/137e1eb0ea620f1b15fff0ba81725eea23de1b7a/LICENSE.txt) | Apache-2.0 | Immutable fragment is referenced and hashed; no plugin code or fixture is copied in this foundation |
+| [PLUGIN-003 reader repository](https://github.com/nekrasovp/pelican-jupyter/blob/137e1eb0ea620f1b15fff0ba81725eea23de1b7a/LICENSE.txt) | Apache-2.0 | Repository license reviewed; the generated fragment is only referenced and hashed. Copying it requires a separate exact intake review of generator/template provenance and obligations |
 
 An MIT theme can interoperate with these tools under the stated separation.
 If a future distribution bundles or modifies upstream material, its license and

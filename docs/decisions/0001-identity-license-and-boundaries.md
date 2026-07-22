@@ -53,9 +53,11 @@ notebook output.**
 
 ## License reasoning
 
-The new repository is a clean-room project foundation. No templates, CSS,
-JavaScript, images, fonts, icons, or personal content were copied from the
-vendored site theme. The separate
+The new repository adopts a from-scratch, no-copy implementation boundary.
+Prior themes may be studied for requirements and compatibility context, but
+their templates, CSS, JavaScript, images, fonts, icons, and personal content
+must not be copied or adapted into this project. No such material was copied
+into this foundation. The separate
 [lineage and asset audit](../third-party-and-assets.md) records why even
 permissively licensed legacy files are not imported by default.
 

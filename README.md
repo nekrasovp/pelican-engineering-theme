@@ -59,8 +59,8 @@ reserved now; their implementation is intentionally outside this foundation.
 
 ## Non-goals
 
-- no Pavel- or `nekrasovp.ru`-specific content, routes, navigation, analytics,
-  dependency pins, or personal assets;
+- no content, routes, navigation, analytics, dependency pins, or personal
+  assets specific to an individual publisher or consuming site;
 - no notebook conversion, execution, parsing, sanitization, or reader import;
 - no bundled Bootstrap, Bootswatch, icon font, web font, or legacy theme asset;
 - no mandatory marketing hero, card grid, analytics, comments, or third-party

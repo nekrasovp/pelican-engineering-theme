@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import re
+import subprocess
 from pathlib import Path
 from urllib.parse import unquote
 
@@ -77,6 +78,39 @@ def markdown_files() -> list[Path]:
     return sorted(path for path in ROOT.rglob("*.md") if ".git" not in path.parts)
 
 
+def tracked_text_files(errors: list[str]) -> list[Path]:
+    result = subprocess.run(
+        ["git", "ls-files", "-z"],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+    )
+    if result.returncode != 0:
+        detail = result.stderr.decode("utf-8", errors="replace").strip()
+        errors.append(f"cannot list tracked files: {detail or 'git ls-files failed'}")
+        return []
+
+    paths: list[Path] = []
+    for raw_relative in result.stdout.split(b"\0"):
+        if not raw_relative:
+            continue
+        relative = raw_relative.decode("utf-8", errors="surrogateescape")
+        path = ROOT / relative
+        try:
+            data = path.read_bytes()
+        except OSError as exc:
+            errors.append(f"{relative}: cannot read tracked file: {exc}")
+            continue
+        if b"\0" in data:
+            continue
+        try:
+            data.decode("utf-8")
+        except UnicodeDecodeError:
+            continue
+        paths.append(path)
+    return sorted(paths)
+
+
 def validate_required_files(errors: list[str]) -> None:
     for relative in sorted(REQUIRED_FILES):
         if not (ROOT / relative).is_file():
@@ -121,7 +155,7 @@ def validate_local_links(errors: list[str]) -> None:
 
 
 def validate_privacy(errors: list[str]) -> None:
-    for path in markdown_files():
+    for path in tracked_text_files(errors):
         text = path.read_text(encoding="utf-8")
         if EMAIL.search(text):
             errors.append(f"{path.relative_to(ROOT)}: email address is not allowed")

@@ -50,6 +50,10 @@ commit, path, and digest form the lock. If reader markup changes materially:
    error, and rich output;
 4. perform visual review of every affected state.
 
-Future theme tests may vendor a reviewed fixture copy with its Apache-2.0
-provenance and required notices, or fetch a pre-verified immutable test input.
-This foundation copies no plugin source or fixture content.
+Before any fixture is copied, the exact fragment must undergo an intake and
+license review covering both the reader repository and applicable
+generator/template provenance, including nbconvert and Jupyter. That review
+must record the resulting license and notice obligations. Future theme tests
+may vendor only a fixture that passed this review, or fetch a pre-verified
+immutable test input. This foundation copies no plugin source or fixture
+content.
