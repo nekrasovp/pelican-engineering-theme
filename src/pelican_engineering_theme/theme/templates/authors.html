@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Authors — {{ SITENAME }}{% endblock title %}
+{% block title %}Authors — {{ SITENAME | forceescape }}{% endblock title %}
 {% block content_header %}<h1>Authors</h1>{% endblock content_header %}
 {% block content %}
   {% if authors %}<ul class="pet-taxonomy-list">

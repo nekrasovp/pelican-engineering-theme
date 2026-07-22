@@ -310,6 +310,62 @@ def test_json_ld_and_attribute_breakout_are_escaped(tmp_path: Path) -> None:
     assert set(parser.links[0]) == {"href"}
 
 
+def test_site_and_taxonomy_titles_escape_tag_breakout(tmp_path: Path) -> None:
+    example = tmp_path / "taxonomy-breakout"
+    shutil.copytree(ROOT / "examples/full", example)
+    config = example / "pelicanconf.py"
+    config.write_text(
+        config.read_text(encoding="utf-8")
+        + '\nSITENAME = \'Fixture </h1><script data-site-breakout="true">\'\n',
+        encoding="utf-8",
+    )
+    article = example / "content/hello.md"
+    original = article.read_text(encoding="utf-8")
+    article.write_text(
+        original.replace(
+            "Category: Guides\nTags: example",
+            'Category: Guide </h1><script data-category-breakout="true">\n'
+            'Tags: Tag </h1><script data-tag-breakout="true">\n'
+            'Author: Writer </h1><script data-author-breakout="true">',
+        ),
+        encoding="utf-8",
+    )
+
+    output = build_copied_example(example)
+    direct_pages = [
+        output / relative
+        for relative in (
+            "index.html",
+            "archives.html",
+            "categories.html",
+            "tags.html",
+            "authors.html",
+            "404.html",
+        )
+    ]
+    direct_markup = "\n".join(
+        path.read_text(encoding="utf-8") for path in direct_pages
+    )
+    assert '<script data-site-breakout="true">' not in direct_markup
+    assert "&lt;/h1&gt;&lt;script data-site-breakout=&#34;true&#34;&gt;" in (
+        direct_markup
+    )
+
+    for taxonomy, marker in (
+        ("category", "category-breakout"),
+        ("tag", "tag-breakout"),
+        ("author", "author-breakout"),
+    ):
+        detail_pages = list((output / taxonomy).glob("*.html"))
+        detail_markup = "\n".join(
+            path.read_text(encoding="utf-8") for path in detail_pages
+        )
+        assert f'<script data-{marker}="true">' not in detail_markup
+        assert f"&lt;/h1&gt;&lt;script data-{marker}=&#34;true&#34;&gt;" in (
+            detail_markup
+        )
+
+
 def test_related_posts_and_safe_source_hooks_render_without_services() -> None:
     environment = Environment(loader=FileSystemLoader(THEME / "templates"))
     content = SimpleNamespace(

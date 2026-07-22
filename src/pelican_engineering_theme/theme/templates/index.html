@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block page_class %}{{ super() }} pet-listing-page{% endblock page_class %}
-{% block content_header %}<h1>{{ SITENAME }}</h1>{% endblock content_header %}
+{% block content_header %}<h1>{{ SITENAME | forceescape }}</h1>{% endblock content_header %}
 {% block content %}
   {% set listing_articles = articles_page.object_list if articles_page else articles %}
   {% if listing_articles %}<div class="pet-entry-list">

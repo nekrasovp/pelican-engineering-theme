@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Tags — {{ SITENAME }}{% endblock title %}
+{% block title %}Tags — {{ SITENAME | forceescape }}{% endblock title %}
 {% block content_header %}<h1>Tags</h1>{% endblock content_header %}
 {% block content %}
   {% if tags %}<ul class="pet-taxonomy-list">

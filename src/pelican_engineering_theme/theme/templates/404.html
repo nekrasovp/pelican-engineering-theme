@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Page not found — {{ SITENAME }}{% endblock title %}
+{% block title %}Page not found — {{ SITENAME | forceescape }}{% endblock title %}
 {% block page_class %}{{ super() }} pet-error-page{% endblock page_class %}
 {% block content_header %}<h1>Page not found</h1>{% endblock content_header %}
 {% block content %}

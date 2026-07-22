@@ -98,7 +98,7 @@ head metadata cleanly.
 ## Content template and metadata contract
 
 The packaged templates own index, article, page, archive, category/tag/author
-list and detail, period archive, pagination, and generic 404 presentation. They
+list and detail, pagination, and generic 404 presentation. They
 all extend the same `base.html`; no content template duplicates the document
 shell. Article/page language takes precedence over `DEFAULT_LANG` for the
 document `lang` attribute.
