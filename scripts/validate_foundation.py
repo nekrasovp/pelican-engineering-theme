@@ -9,6 +9,7 @@ from pathlib import Path
 from urllib.parse import unquote
 
 ROOT = Path(__file__).resolve().parents[1]
+EXACT_HEAD_EXPRESSION = "${{ github.event.pull_request.head.sha || github.sha }}"
 
 REQUIRED_FILES = {
     "README.md",
@@ -35,10 +36,12 @@ REQUIRED_FILES = {
     "src/pelican_engineering_theme/theme/static/js/theme.js",
     "examples/minimal/pelicanconf.py",
     "examples/minimal/content/hello.md",
+    "tests/__init__.py",
     "tests/test_example_build.py",
     "tests/test_distribution_gate.py",
     "tests/test_color_mode_contract.py",
     "tests/test_browser_acceptance.py",
+    "tests/test_ci_exact_head.py",
     ".github/workflows/browser.yml",
 }
 
@@ -115,6 +118,12 @@ FORBIDDEN_RUNTIME_TEXT = (
     "gtag(",
     "sendBeacon",
 )
+
+PULL_REQUEST_TRIGGER = re.compile(r"(?m)^  pull_request\s*:")
+CHECKOUT_USE = re.compile(r"^\s*(?:-\s*)?uses:\s*actions/checkout@")
+STEP_START = re.compile(r"^(\s*)-\s+")
+CHECKOUT_REF = re.compile(r"^\s*ref:\s*(.*?)\s*$")
+EXPECTED_SOURCE_SHA = re.compile(r"^\s*PET_EXPECTED_SOURCE_SHA:\s*(.*?)\s*$")
 
 
 def markdown_files() -> list[Path]:
@@ -248,6 +257,88 @@ def validate_runtime_boundaries(errors: list[str]) -> None:
                 )
 
 
+def checkout_refs(workflow_text: str) -> list[tuple[int, str | None]]:
+    """Return each checkout step's line number and explicit ref, if present."""
+    lines = workflow_text.splitlines()
+    checkouts: list[tuple[int, str | None]] = []
+    for index, line in enumerate(lines):
+        if not CHECKOUT_USE.match(line):
+            continue
+
+        uses_indent = len(line) - len(line.lstrip())
+        step_start: int | None = None
+        step_indent: int | None = None
+        for candidate in range(index, -1, -1):
+            match = STEP_START.match(lines[candidate])
+            if match is None:
+                continue
+            candidate_indent = len(match.group(1))
+            if candidate_indent <= uses_indent:
+                step_start = candidate
+                step_indent = candidate_indent
+                break
+
+        if step_start is None or step_indent is None:
+            checkouts.append((index + 1, None))
+            continue
+
+        step_end = len(lines)
+        for candidate in range(step_start + 1, len(lines)):
+            candidate_line = lines[candidate]
+            if not candidate_line.strip():
+                continue
+            match = STEP_START.match(candidate_line)
+            candidate_indent = len(candidate_line) - len(candidate_line.lstrip())
+            if (match is not None and candidate_indent <= step_indent) or (
+                candidate_indent < step_indent
+            ):
+                step_end = candidate
+                break
+
+        refs = [
+            match.group(1)
+            for candidate_line in lines[step_start:step_end]
+            if (match := CHECKOUT_REF.match(candidate_line)) is not None
+        ]
+        checkouts.append((index + 1, refs[0] if len(refs) == 1 else None))
+    return checkouts
+
+
+def ci_exact_head_errors(workflow_dir: Path) -> list[str]:
+    """Validate immutable exact-head evidence across every PR workflow checkout."""
+    errors: list[str] = []
+    workflow_paths = sorted(
+        {*workflow_dir.glob("*.yml"), *workflow_dir.glob("*.yaml")}
+    )
+    for path in workflow_paths:
+        text = path.read_text(encoding="utf-8")
+        if PULL_REQUEST_TRIGGER.search(text) is None:
+            continue
+
+        for line_number, ref in checkout_refs(text):
+            if ref != EXACT_HEAD_EXPRESSION:
+                errors.append(
+                    f"{path.name}:{line_number}: actions/checkout must use exact ref "
+                    f"{EXACT_HEAD_EXPRESSION!r}, found {ref!r}"
+                )
+
+        expected_values = [
+            match.group(1)
+            for line in text.splitlines()
+            if (match := EXPECTED_SOURCE_SHA.match(line)) is not None
+        ]
+        if path.name == "browser.yml" and expected_values != [EXACT_HEAD_EXPRESSION]:
+            errors.append(
+                "browser.yml: PET_EXPECTED_SOURCE_SHA must use the same exact-head "
+                f"expression {EXACT_HEAD_EXPRESSION!r}, found {expected_values!r}"
+            )
+    return errors
+
+
+def validate_ci_exact_head(errors: list[str]) -> None:
+    errors.extend(ci_exact_head_errors(ROOT / ".github/workflows"))
+
+
 def main() -> int:
     errors: list[str] = []
     validate_required_files(errors)
@@ -256,6 +347,7 @@ def main() -> int:
     validate_local_links(errors)
     validate_privacy(errors)
     validate_runtime_boundaries(errors)
+    validate_ci_exact_head(errors)
 
     if errors:
         for error in errors:

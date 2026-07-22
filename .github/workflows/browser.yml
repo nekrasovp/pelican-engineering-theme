@@ -35,7 +35,7 @@ jobs:
         env:
           PET_RUN_BROWSER: "1"
           PET_SCREENSHOT_DIR: artifacts/theme003-browser
-          PET_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          PET_EXPECTED_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: >-
           uv run --locked --all-groups pytest -m browser
           tests/test_browser_acceptance.py -q

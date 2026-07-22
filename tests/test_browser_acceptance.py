@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -14,12 +15,6 @@ from typing import TYPE_CHECKING, Any, cast
 
 import pytest
 
-if os.environ.get("PET_RUN_BROWSER") != "1":
-    pytest.skip(
-        "set PET_RUN_BROWSER=1 for real Chromium acceptance",
-        allow_module_level=True,
-    )
-
 if TYPE_CHECKING:
     from playwright.sync_api import Browser, BrowserContext, Page
 
@@ -29,6 +24,30 @@ LIGHT_BG = "rgb(247, 248, 243)"
 DARK_BG = "rgb(16, 23, 18)"
 
 pytestmark = pytest.mark.browser
+
+
+def actual_checkout_sha() -> str:
+    result = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    source_sha = result.stdout.strip()
+    assert re.fullmatch(r"[0-9a-f]{40}", source_sha), source_sha
+    return source_sha
+
+
+def verified_checkout_sha() -> tuple[str, str | None]:
+    actual = actual_checkout_sha()
+    expected = os.environ.get("PET_EXPECTED_SOURCE_SHA")
+    if expected is not None:
+        assert re.fullmatch(r"[0-9a-f]{40}", expected), expected
+        assert actual == expected, (
+            f"actual checkout {actual} does not match expected PR head {expected}"
+        )
+    return actual, expected
 
 
 class QuietHandler(SimpleHTTPRequestHandler):
@@ -343,9 +362,14 @@ def capture_screenshots(
     return records
 
 
+@pytest.mark.skipif(
+    os.environ.get("PET_RUN_BROWSER") != "1",
+    reason="set PET_RUN_BROWSER=1 for real Chromium acceptance",
+)
 def test_theme_color_mode_in_real_chromium(tmp_path: Path) -> None:
     from playwright.sync_api import sync_playwright
 
+    source_sha, expected_source_sha = verified_checkout_sha()
     artifact_root = Path(
         os.environ.get("PET_SCREENSHOT_DIR", tmp_path / "browser-artifacts")
     ).resolve()
@@ -374,9 +398,8 @@ def test_theme_color_mode_in_real_chromium(tmp_path: Path) -> None:
     report = {
         "engine": "Chromium",
         "engine_version": browser_version,
-        "source_sha": os.environ.get(
-            "PET_SOURCE_SHA", os.environ.get("GITHUB_SHA", "local-working-tree")
-        ),
+        "source_sha": source_sha,
+        "expected_source_sha": expected_source_sha,
         "cases": cases,
         "timing": timing,
         "screenshots": screenshots,

@@ -53,6 +53,8 @@ REQUIRED_SDIST_SUPPORT_FILES = {
     "scripts/verify_clean_sdist.py",
     "scripts/verify_distribution.py",
     "scripts/verify_external_install.py",
+    "tests/__init__.py",
+    "tests/test_ci_exact_head.py",
     "tests/test_distribution_gate.py",
     "tests/test_color_mode_contract.py",
     "tests/test_browser_acceptance.py",

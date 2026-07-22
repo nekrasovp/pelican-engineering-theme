@@ -76,3 +76,19 @@ def test_gate_rejects_omitted_customization_contract() -> None:
     assert sdist_support_errors(members) == [
         "missing required sdist support file: docs/contracts/customization-v1.md"
     ]
+
+
+def test_gate_rejects_omitted_sdist_test_package() -> None:
+    members = REQUIRED_SDIST_SUPPORT_FILES - {"tests/__init__.py"}
+
+    assert sdist_support_errors(members) == [
+        "missing required sdist support file: tests/__init__.py"
+    ]
+
+
+def test_gate_rejects_omitted_exact_head_regression_test() -> None:
+    members = REQUIRED_SDIST_SUPPORT_FILES - {"tests/test_ci_exact_head.py"}
+
+    assert sdist_support_errors(members) == [
+        "missing required sdist support file: tests/test_ci_exact_head.py"
+    ]
