@@ -1,0 +1,186 @@
+name: Package
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  locked:
+    name: Locked validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          enable-cache: true
+      - name: Sync exact lock
+        run: uv sync --locked --all-groups
+      - name: Test
+        run: uv run --locked --all-groups pytest
+      - name: Lint
+        run: uv run --locked --all-groups ruff check .
+      - name: Type check
+        run: uv run --locked --all-groups mypy
+      - name: Preserve foundation and scope boundaries
+        run: uv run --locked --all-groups python scripts/validate_foundation.py
+
+  compatibility:
+    name: Python ${{ matrix.python }} / Pelican ${{ matrix.pelican }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12", "3.13"]
+        pelican: ["4.11.0", "4.12.0"]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          enable-cache: true
+      - name: Sync locked development environment
+        run: uv sync --locked --all-groups --python "${{ matrix.python }}"
+      - name: Select exact Pelican version
+        run: uv pip install --python .venv/bin/python "pelican==${{ matrix.pelican }}"
+      - name: Show executable versions
+        run: .venv/bin/python -c "import platform, pelican; print(platform.python_version(), pelican.__version__)"
+      - name: Run smoke and package tests
+        run: .venv/bin/python -m pytest
+
+  build:
+    name: Build and inspect distributions
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          enable-cache: true
+      - name: Sync exact lock
+        run: uv sync --locked --all-groups
+      - name: Build sdist and wheel
+        run: uv build
+      - name: Verify identity, metadata, and package data
+        run: uv run --locked --all-groups python scripts/verify_distribution.py dist
+      - name: Upload wheel, sdist, and generic example
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: install-proof-input
+          path: |
+            dist/*.whl
+            dist/*.tar.gz
+            examples/minimal/**
+          if-no-files-found: error
+          retention-days: 7
+
+  installed-wheel:
+    name: Artifact-only installed-wheel build
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+      - name: Download build evidence without a repository checkout
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: install-proof-input
+      - name: Install only the wheel and copy the generic example
+        shell: bash
+        run: |
+          proof_root="${RUNNER_TEMP}/pet-external-proof"
+          uv venv --python 3.13 "${proof_root}/.venv"
+          proof_python="${proof_root}/.venv/bin/python"
+          wheel=(dist/*.whl)
+          test "${#wheel[@]}" -eq 1
+          uv pip install --python "${proof_python}" "${wheel[0]}"
+          cp -R examples/minimal "${proof_root}/example"
+      - name: Prove the import comes from site-packages
+        shell: bash
+        run: |
+          proof_root="${RUNNER_TEMP}/pet-external-proof"
+          proof_python="${proof_root}/.venv/bin/python"
+          cd "${proof_root}"
+          env -u PYTHONPATH "${proof_python}" -I - <<'PY'
+          import pathlib
+          import sysconfig
+
+          import pelican_engineering_theme as theme
+
+          module = pathlib.Path(theme.__file__).resolve()
+          purelib = pathlib.Path(sysconfig.get_paths()["purelib"]).resolve()
+          assert module.is_relative_to(purelib), (module, purelib)
+          assert theme.get_theme_path().is_dir()
+          print(f"import={module}")
+          print(f"theme={theme.get_theme_path()}")
+          PY
+      - name: Build from the installed wheel outside the checkout
+        shell: bash
+        run: |
+          proof_root="${RUNNER_TEMP}/pet-external-proof"
+          proof_python="${proof_root}/.venv/bin/python"
+          cd "${proof_root}/example"
+          env -u PYTHONPATH "${proof_python}" -I -m pelican content \
+            -s pelicanconf.py -o output
+          test -f output/index.html
+          test -f output/small-technical-note.html
+          test -f output/theme/css/scaffold.css
+
+  clean-sdist:
+    name: Clean unpacked-sdist tests
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+      - name: Download the sdist without a repository checkout
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: install-proof-input
+      - name: Install the exact sdist and run its unpacked tests
+        shell: bash
+        run: |
+          sdists=(dist/*.tar.gz)
+          test "${#sdists[@]}" -eq 1
+          test -f "${sdists[0]}"
+          bootstrap_root="${RUNNER_TEMP}/pet-sdist-bootstrap"
+          mkdir -p "${bootstrap_root}"
+          tar -xzf "${sdists[0]}" -C "${bootstrap_root}"
+          gates=("${bootstrap_root}"/*/scripts/verify_clean_sdist.py)
+          test "${#gates[@]}" -eq 1
+          test -f "${gates[0]}"
+          env -u PYTHONPATH python -I "${gates[0]}" \
+            "${sdists[0]}" --python 3.13

@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content_header %}<h1>{{ SITENAME }}</h1>{% endblock content_header %}
+{% block content %}
+  {% set listing_articles = articles_page.object_list if articles_page else articles %}
+  <ol>
+    {% for article in listing_articles %}
+      <li><a href="{{ SITEURL }}/{{ article.url }}">{{ article.title }}</a></li>
+    {% endfor %}
+  </ol>
+{% endblock content %}

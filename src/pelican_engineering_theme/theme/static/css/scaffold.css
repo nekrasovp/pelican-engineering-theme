@@ -1,0 +1,26 @@
+/* Minimal structural scaffold. Visual design belongs to later milestones. */
+:root {
+  --pet-font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --pet-font-mono: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+}
+
+html {
+  font-family: var(--pet-font-sans);
+}
+
+body {
+  margin: 0;
+}
+
+body > header,
+body > main,
+body > footer {
+  margin-inline: auto;
+  max-width: 72rem;
+  padding: 1rem;
+}
+
+code,
+pre {
+  font-family: var(--pet-font-mono);
+}

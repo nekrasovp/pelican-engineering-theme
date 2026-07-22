@@ -1,0 +1,3 @@
+recursive-include examples/minimal *.md *.py
+recursive-include scripts *.py
+recursive-include tests *.py
