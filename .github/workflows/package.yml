@@ -101,6 +101,8 @@ jobs:
             dist/*.tar.gz
             examples/minimal/**
             examples/full/**
+            scripts/__init__.py
+            scripts/validate_content.py
             scripts/validate_shell.py
           if-no-files-found: error
           retention-days: 7
@@ -166,7 +168,22 @@ jobs:
           done
           test -f "${proof_root}/examples/minimal/output/small-technical-note.html"
           test -f "${proof_root}/examples/full/output/configurable-shell.html"
+          test -f "${proof_root}/examples/full/output/404.html"
+          test -f "${proof_root}/examples/full/output/archives.html"
+          test -f "${proof_root}/examples/full/output/categories.html"
+          test -f "${proof_root}/examples/full/output/category/guides.html"
+          test -f "${proof_root}/examples/full/output/tags.html"
+          test -f "${proof_root}/examples/full/output/tag/example.html"
+          test -f "${proof_root}/examples/full/output/authors.html"
+          test -f "${proof_root}/examples/full/output/author/example-editors.html"
+          test -f "${proof_root}/examples/full/output/pages/about.html"
+          test -f "${proof_root}/examples/full/output/index2.html"
+          test -f "${proof_root}/examples/full/output/index3.html"
           "${proof_python}" -I "${artifact_root}/scripts/validate_shell.py" \
+            "${proof_root}/examples/minimal/output" \
+            "${proof_root}/examples/full/output"
+          cd "${artifact_root}"
+          env -u PYTHONPATH "${proof_python}" -m scripts.validate_content \
             "${proof_root}/examples/minimal/output" \
             "${proof_root}/examples/full/output"
 

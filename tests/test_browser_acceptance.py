@@ -310,10 +310,11 @@ def capture_screenshots(
     *,
     page_path: str,
     prefix: str,
+    themes: tuple[str, ...] = ("light", "dark"),
 ) -> list[dict[str, str | int]]:
     records: list[dict[str, str | int]] = []
     for width, height in ((390, 844), (768, 1024), (1440, 1000)):
-        for theme in ("light", "dark"):
+        for theme in themes:
             context = context_with_storage(
                 browser,
                 stored=theme,
@@ -352,7 +353,9 @@ def overflowing_elements(page: Page) -> list[str]:
               const selectors = [
                 ".pet-site-header", ".pet-site-header__inner",
                 ".pet-navigation", ".pet-navigation__list",
-                ".pet-site-footer", ".pet-site-footer__inner"
+                ".pet-site-footer", ".pet-site-footer__inner",
+                ".pet-main", ".pet-prose", ".pet-entry-list",
+                ".pet-content-status", ".pet-pagination", "table"
               ];
               const failures = [];
               if (document.documentElement.scrollWidth > window.innerWidth + 1) {
@@ -403,6 +406,69 @@ def shell_layout_cases(browser: Browser, minimal_url: str, full_url: str) -> lis
         cases.append("overflow detector rejects an injected navigation regression")
     finally:
         regression.close()
+    return cases
+
+
+def content_surface_cases(browser: Browser, full_url: str) -> list[str]:
+    """Exercise content templates and narrow-layout contracts in Chromium."""
+    routes = (
+        ("index", ""),
+        ("article", "long-technical-title.html"),
+        ("page", "pages/about.html"),
+        ("taxonomy", "category/guides.html"),
+        ("archive", "archives.html"),
+        ("404", "404.html"),
+    )
+    cases: list[str] = []
+    for width, height in ((390, 844), (768, 1024), (1440, 1000)):
+        for label, path in routes:
+            context = context_with_storage(
+                browser,
+                viewport={"width": width, "height": height},
+                reduced_motion="reduce",
+            )
+            try:
+                page = open_page(context, f"{full_url}/{path}")
+                assert overflowing_elements(page) == []
+                cases.append(f"{label} content fits {width}x{height}")
+            finally:
+                context.close()
+
+    context = context_with_storage(browser, viewport={"width": 768, "height": 1024})
+    try:
+        russian = open_page(context, f"{full_url}/multilingual-guide-ru.html")
+        assert russian.locator("html").get_attribute("lang") == "ru"
+        assert russian.locator('[aria-label="Translations"]').is_visible()
+        cases.append("Russian article language and translation navigation are exposed")
+
+        updated = open_page(context, f"{full_url}/configurable-shell.html")
+        labels = updated.locator(".pet-content-metadata dt").all_text_contents()
+        assert "Published" in labels and "Updated" in labels
+        cases.append("published and updated dates have distinct visible labels")
+
+        archived = open_page(context, f"{full_url}/archived-interface.html")
+        archive_color = archived.locator(".pet-content-status--archive").evaluate(
+            "element => getComputedStyle(element).backgroundColor"
+        )
+        deprecated = open_page(context, f"{full_url}/deprecated-protocol.html")
+        deprecated_color = deprecated.locator(
+            ".pet-content-status--deprecated"
+        ).evaluate("element => getComputedStyle(element).backgroundColor")
+        assert archive_color != deprecated_color
+        cases.append("archive and deprecated statuses are visibly distinct")
+
+        first = open_page(context, full_url)
+        assert first.locator('.pet-pagination a[rel="prev"]').count() == 0
+        assert first.locator('.pet-pagination a[rel="next"]').count() == 1
+        middle = open_page(context, f"{full_url}/index2.html")
+        assert middle.locator('.pet-pagination a[rel="prev"]').count() == 1
+        assert middle.locator('.pet-pagination a[rel="next"]').count() == 1
+        last = open_page(context, f"{full_url}/index3.html")
+        assert last.locator('.pet-pagination a[rel="prev"]').count() == 1
+        assert last.locator('.pet-pagination a[rel="next"]').count() == 0
+        cases.append("pagination exposes correct first, middle, and last boundaries")
+    finally:
+        context.close()
     return cases
 
 
@@ -486,7 +552,7 @@ def focus_and_skip_cases(browser: Browser, full_url: str) -> list[str]:
 
 
 def accessibility_case(
-    context: BrowserContext, url: str, fixture: str
+    context: BrowserContext, url: str, fixture: str, url_path: str
 ) -> dict[str, Any]:
     external_requests: list[str] = []
     page = context.new_page()
@@ -515,19 +581,23 @@ def accessibility_case(
         ),
     )
     violations = cast(list[dict[str, Any]], result["violations"])
+    incomplete = cast(list[dict[str, Any]], result["incomplete"])
     assert violations == [], [
         {"id": violation["id"], "impact": violation["impact"]}
         for violation in violations
     ]
+    assert incomplete == [], [
+        {"id": item["id"], "impact": item["impact"]} for item in incomplete
+    ]
     return {
         "fixture": fixture,
-        "url_path": "/" if fixture == "full" else "/small-technical-note.html",
+        "url_path": url_path,
         "engine": "axe-core",
         "engine_version": "4.12.1",
         "license": "MPL-2.0",
         "violations": 0,
         "passes": len(cast(list[object], result["passes"])),
-        "incomplete": len(cast(list[object], result["incomplete"])),
+        "incomplete": 0,
         "external_runtime_requests": external_requests,
     }
 
@@ -569,6 +639,10 @@ def test_theme_color_mode_in_real_chromium(tmp_path: Path) -> None:
                 layout_cases = shell_layout_cases(browser, minimal_url, full_url)
                 cases.extend(layout_cases)
                 cases.extend(focus_and_skip_cases(browser, full_url))
+                theme004_predecessor_cases = list(cases)
+                assert len(theme004_predecessor_cases) == 22
+                content_cases = content_surface_cases(browser, full_url)
+                cases.extend(content_cases)
                 screenshots = capture_screenshots(
                     browser,
                     minimal_url,
@@ -585,16 +659,56 @@ def test_theme_color_mode_in_real_chromium(tmp_path: Path) -> None:
                         prefix="full-",
                     )
                 )
+                theme004_predecessor_screenshots = list(screenshots)
+                for label, path in (
+                    ("content-index", ""),
+                    ("content-article", "long-technical-title.html"),
+                    ("content-page", "pages/about.html"),
+                    ("content-taxonomy", "category/guides.html"),
+                    ("content-archive", "archives.html"),
+                    ("content-404", "404.html"),
+                    ("content-archived-status", "archived-interface.html"),
+                    ("content-deprecated-status", "deprecated-protocol.html"),
+                ):
+                    screenshots.extend(
+                        capture_screenshots(
+                            browser,
+                            full_url,
+                            artifact_root,
+                            page_path=path,
+                            prefix=f"{label}-",
+                            themes=("light",),
+                        )
+                    )
                 accessibility: list[dict[str, Any]] = []
-                for fixture, url in (
-                    ("minimal", f"{minimal_url}/small-technical-note.html"),
-                    ("full", full_url),
+                for fixture, url, url_path in (
+                    (
+                        "minimal",
+                        f"{minimal_url}/small-technical-note.html",
+                        "/small-technical-note.html",
+                    ),
+                    ("full", full_url, "/"),
+                    (
+                        "full-article",
+                        f"{full_url}/long-technical-title.html",
+                        "/long-technical-title.html",
+                    ),
+                    ("full-page", f"{full_url}/pages/about.html", "/pages/about.html"),
+                    (
+                        "full-taxonomy",
+                        f"{full_url}/category/guides.html",
+                        "/category/guides.html",
+                    ),
+                    ("full-archive", f"{full_url}/archives.html", "/archives.html"),
+                    ("full-404", f"{full_url}/404.html", "/404.html"),
                 ):
                     context = context_with_storage(
                         browser, viewport={"width": 390, "height": 844}
                     )
                     try:
-                        accessibility.append(accessibility_case(context, url, fixture))
+                        accessibility.append(
+                            accessibility_case(context, url, fixture, url_path)
+                        )
                     finally:
                         context.close()
             finally:
@@ -617,6 +731,11 @@ def test_theme_color_mode_in_real_chromium(tmp_path: Path) -> None:
         "case_count": len(cases),
         "theme003_predecessor_case_count": len(predecessor_cases),
         "theme003_predecessor_cases": predecessor_cases,
+        "theme004_predecessor_case_count": len(theme004_predecessor_cases),
+        "theme004_predecessor_cases": theme004_predecessor_cases,
+        "theme005_content_case_count": len(content_cases),
+        "theme005_content_cases": content_cases,
+        "theme004_predecessor_screenshots": theme004_predecessor_screenshots,
         "accessibility": accessibility,
         "timing": timing,
         "screenshots": screenshots,

@@ -45,6 +45,7 @@ def test_example_builds(example_name: str, tmp_path: Path) -> None:
         for override in (
             "Child-template metadata override fixture",
             "https://example.test/",
+            'data-pet-schema="website"',
             "pet-fixture-body",
             "pet-fixture-page",
             "Child-template hero override fixture",

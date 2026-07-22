@@ -5,8 +5,9 @@
 - Applies from: first `0.1.x` preview that implements the theme
 
 This document freezes the initial public names established in THEME-001,
-records their compatible THEME-003 color-mode implementation, and adds the
-THEME-004 reusable shell, configuration, and generic component contracts.
+records their compatible THEME-003 color-mode implementation, adds the
+THEME-004 reusable shell, and records the additive THEME-005 content, metadata,
+feed, structured-data, pagination, and 404 contracts.
 
 ## Stable template blocks
 
@@ -72,6 +73,13 @@ Theme-specific settings cover behavior without a standard Pelican equivalent:
 | `ENGINEERING_THEME_LANGUAGE_LINKS` | empty | Sequence of mappings with `label`, `url`, and optional `lang`/`hreflang` |
 | `ENGINEERING_THEME_FOOTER_TEXT` | empty | Escaped plain-text footer content |
 | `ENGINEERING_THEME_SHOW_PELICAN_CREDIT` | `False` | Optional “Built with Pelican” link |
+| `ENGINEERING_THEME_ENABLE_SOCIAL_METADATA` | `True` | Emit a complete OG/Twitter group only when title and absolute canonical are available |
+| `ENGINEERING_THEME_META_DESCRIPTION` | empty | Plain-text fallback description when content has no summary |
+| `ENGINEERING_THEME_SOCIAL_IMAGE` | empty | Optional absolute HTTP(S) OG/Twitter image URL |
+| `ENGINEERING_THEME_JSON_LD_PERSON` | empty | Person mapping requiring `name` and absolute HTTP(S) `url` |
+| `ENGINEERING_THEME_JSON_LD_WEBSITE` | empty | WebSite mapping requiring `name` and absolute HTTP(S) `url` |
+| `ENGINEERING_THEME_ENABLE_ARTICLE_JSON_LD` | `False` | Opt in to focused article schema output when content fields are complete |
+| `ENGINEERING_THEME_ARTICLE_SCHEMA_TYPE` | `Article` | Exact allow-list: `Article` or `TechArticle` |
 
 `MENUITEMS` is deliberately the primary navigation API. The namespaced
 `ENGINEERING_THEME_NAV` exists only for the current-page metadata that standard
@@ -79,6 +87,44 @@ two-item Pelican tuples cannot carry. The plural language-link setting follows
 the plan even when a site supplies only one alternate language. Empty settings,
 invalid navigation entries, and invalid language-link entries emit no empty
 control or container.
+
+Standard Pelican feed settings remain authoritative. The theme discovers valid
+relative paths from `FEED_ALL_ATOM`, `FEED_ALL_RSS`, category, tag, author, and
+translation feed settings and prefixes them with an absolute `SITEURL`. The
+current content or taxonomy route is the canonical path. Incomplete values,
+unsafe feed paths, non-HTTP site URLs, and the packaged 404 omit the relevant
+head metadata cleanly.
+
+## Content template and metadata contract
+
+The packaged templates own index, article, page, archive, category/tag/author
+list and detail, period archive, pagination, and generic 404 presentation. They
+all extend the same `base.html`; no content template duplicates the document
+shell. Article/page language takes precedence over `DEFAULT_LANG` for the
+document `lang` attribute.
+
+The reusable includes are internal composition units for pagination, article
+metadata, content translations, status notices, provenance/related links,
+canonical URLs, feed discovery, social metadata, and JSON-LD. Existing stable
+blocks remain the override surface, and `super()` remains safe.
+
+Published and modified dates use separately labelled `<dt>` values and
+machine-readable `<time datetime>` attributes. `Archive_Notice` and
+`Deprecated_Warning` content metadata render separately labelled `role="note"`
+asides with distinct status classes and colors. `Source_Url` accepts only an
+HTTP(S), root-relative, or explicit dot-relative link. `Source_Label` is
+escaped plain text. `article.related_posts` must contain objects with non-empty
+`title` and `url`. Empty or invalid optional values emit no wrapper.
+
+The package owns `404.html`; a site enables generation with Pelican's
+`TEMPLATE_PAGES = {"404.html": "404.html"}`. The theme loader supplies the
+template, so no manual site copy is required. The missing route emits no
+canonical, social card, or JSON-LD identity.
+
+Person, WebSite, Article, and TechArticle scripts use complete JSON objects and
+Jinja's HTML-safe `tojson` serialization. The focused required-field validator
+checks context/type, identity URL, and named article author. Malformed and
+incomplete settings omit the entire script rather than emitting partial JSON.
 
 ## Generic shell and content classes
 
@@ -90,6 +136,10 @@ The additive THEME-004 component contract exposes these reusable selectors:
 | `.pet-button` | Accessible button treatment for link or button controls |
 | `.pet-prose` | Restrained long-form reading measure and edge spacing |
 | `.pet-status-notice` | Informational notice; `data-status` accepts `success`, `warning`, or `danger` |
+| `.pet-content-metadata` | Published/updated/author/taxonomy definition list |
+| `.pet-content-status--archive` | Historical archive notice |
+| `.pet-content-status--deprecated` | Active deprecation warning |
+| `.pet-pagination` | Previous/next navigation with a visible page boundary label |
 
 Shell implementation classes remain internal. The header and navigation use
 wrapping flex layout rather than a hamburger or Bootstrap dependency. The skip

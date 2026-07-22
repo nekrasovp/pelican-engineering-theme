@@ -21,13 +21,22 @@ THEME = pelican_engineering_theme.get_theme_path()
 BASE = THEME / "templates/base.html"
 CSS = THEME / "static/css/scaffold.css"
 REQUIRED_INCLUDES = {
+    "article-metadata.html",
     "brand.html",
+    "canonical.html",
+    "content-footer.html",
+    "content-status.html",
+    "feed-discovery.html",
     "footer.html",
     "head-metadata.html",
     "header.html",
     "language-link.html",
     "navigation.html",
+    "pagination.html",
+    "social-metadata.html",
+    "structured-data.html",
     "theme-toggle.html",
+    "translations.html",
 }
 
 PUBLIC_BLOCKS = (
@@ -61,7 +70,10 @@ def test_base_owns_reusable_includes_and_stable_blocks() -> None:
     for include in REQUIRED_INCLUDES - {"brand.html", "language-link.html"}:
         assert f"includes/{include}" in "\n".join(
             path.read_text(encoding="utf-8")
-            for path in [BASE, *(includes.glob("*.html"))]
+            for path in [
+                *(THEME.glob("templates/*.html")),
+                *(includes.glob("*.html")),
+            ]
         )
 
 
@@ -203,7 +215,7 @@ def test_navigation_changes_through_config_only(tmp_path: Path) -> None:
     output = build_copied_example(example)
     markup = (output / "index.html").read_text(encoding="utf-8")
     assert "Manuals" in markup
-    assert ">Guides<" not in markup
+    assert '<a href="/guides/">Guides</a>' not in markup
 
 
 def test_standard_menuitems_is_the_primary_navigation_api(tmp_path: Path) -> None:

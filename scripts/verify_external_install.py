@@ -76,6 +76,19 @@ def main() -> int:
                 "theme/css/scaffold.css",
                 "theme/js/theme.js",
             }
+            if example_name == "full":
+                required_outputs.update(
+                    {
+                        "404.html",
+                        "archives.html",
+                        "authors.html",
+                        "categories.html",
+                        "index2.html",
+                        "index3.html",
+                        "pages/about.html",
+                        "tags.html",
+                    }
+                )
             missing = [
                 output
                 for output in sorted(required_outputs)
@@ -93,6 +106,15 @@ def main() -> int:
                     str(example_path / "output"),
                 ],
                 cwd=proof_root,
+            )
+            run(
+                [
+                    str(python),
+                    "-m",
+                    "scripts.validate_content",
+                    str(example_path / "output"),
+                ],
+                cwd=ROOT,
             )
             print(f"External installed-wheel {example_name} build passed")
 

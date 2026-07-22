@@ -6,6 +6,7 @@ from pathlib import Path
 import pelican_engineering_theme
 
 REQUIRED_THEME_FILES = {
+    "templates/404.html",
     "templates/archives.html",
     "templates/article.html",
     "templates/author.html",
@@ -19,12 +20,21 @@ REQUIRED_THEME_FILES = {
     "templates/tag.html",
     "templates/tags.html",
     "templates/includes/brand.html",
+    "templates/includes/article-metadata.html",
+    "templates/includes/canonical.html",
+    "templates/includes/content-footer.html",
+    "templates/includes/content-status.html",
+    "templates/includes/feed-discovery.html",
     "templates/includes/footer.html",
     "templates/includes/head-metadata.html",
     "templates/includes/header.html",
     "templates/includes/language-link.html",
     "templates/includes/navigation.html",
+    "templates/includes/pagination.html",
+    "templates/includes/social-metadata.html",
+    "templates/includes/structured-data.html",
     "templates/includes/theme-toggle.html",
+    "templates/includes/translations.html",
     "static/css/scaffold.css",
     "static/js/theme.js",
 }

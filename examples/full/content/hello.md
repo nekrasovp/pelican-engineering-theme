@@ -1,5 +1,6 @@
 Title: A Configurable Shell
 Date: 2026-02-01
+Modified: 2026-02-03
 Category: Guides
 Tags: example
 Slug: configurable-shell

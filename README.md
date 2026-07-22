@@ -1,7 +1,8 @@
 # pelican-engineering-theme
 
 > Status: the unreleased installable package includes the semantic color-mode
-> foundation and reusable core shell. Notebook presentation, real-site
+> foundation, reusable core shell, and generic Pelican content, taxonomy,
+> metadata, pagination, and 404 templates. Notebook presentation, real-site
 > integration, and a published distribution do not exist yet.
 
 A reusable, accessibility-conscious Pelican theme for technical writers who
@@ -56,8 +57,10 @@ uv run --locked --all-groups pelican content -s pelicanconf.py -o output
 ```
 
 `examples/full` exercises every optional shell setting and a child template
-that extends `!theme/index.html`; both examples are built from the installed
-wheel outside the checkout in CI.
+that extends `!theme/index.html`. It also generates article and page content,
+archives, category/tag/author list and detail pages, three pagination boundary
+pages, an English/Russian translation pair, and the packaged 404. Both examples
+are built from the installed wheel outside the checkout in CI.
 
 `pip install pelican-engineering-theme` is future release syntax only. It does
 not work until a separately authorized PyPI publication has occurred.
@@ -121,9 +124,80 @@ settings render no empty navigation, language control, or footer. The header
 wraps at narrow widths without Bootstrap, third-party JavaScript, or a
 hamburger requirement; a working skip link targets the semantic main element.
 
+## Content, metadata, and feed configuration
+
+The content templates use standard Pelican objects and settings. Production
+canonical and feed discovery URLs are assembled from an absolute `SITEURL` and
+the current Pelican route. Standard relative feed paths are supported for the
+site-wide, category, tag, author, and translation Atom/RSS settings. Invalid,
+external, or non-string feed paths produce no discovery tag. Keep
+`RELATIVE_URLS = False` when absolute canonical and discovery metadata is
+required.
+
+Open Graph and Twitter card tags are enabled by default but appear only when a
+non-empty title and absolute canonical URL exist. They use no account handle or
+production identifier. Optional settings are:
+
+```python
+ENGINEERING_THEME_ENABLE_SOCIAL_METADATA = True
+ENGINEERING_THEME_META_DESCRIPTION = "A generic technical publication."
+ENGINEERING_THEME_SOCIAL_IMAGE = "https://example.test/static/preview.png"
+```
+
+Person and WebSite JSON-LD are explicit mappings and are emitted only on the
+first index page when both `name` and an absolute HTTP(S) `url` are present.
+Article JSON-LD is opt-in and derives its headline, date, language, canonical
+URL, and author from the current Pelican article:
+
+```python
+ENGINEERING_THEME_JSON_LD_PERSON = {
+    "name": "Example Editor",
+    "url": "https://example.test/about/",
+}
+ENGINEERING_THEME_JSON_LD_WEBSITE = {
+    "name": "Generic Systems Journal",
+    "url": "https://example.test/",
+}
+ENGINEERING_THEME_ENABLE_ARTICLE_JSON_LD = True
+ENGINEERING_THEME_ARTICLE_SCHEMA_TYPE = "TechArticle"  # or "Article"
+```
+
+Incomplete or unsupported schema settings emit no JSON-LD. Values are encoded
+with Jinja's HTML-safe JSON serializer, including closing-tag hazards.
+
+Use underscore-named Pelican content metadata for optional status and
+provenance hooks:
+
+```text
+Archive_Notice: Retained for historical reference.
+Deprecated_Warning: Do not use this approach for new work.
+Source_Url: https://example.test/source.txt
+Source_Label: Inspect the source record
+```
+
+`article.related_posts`, when supplied by a site or plugin as ordinary Pelican
+content objects, produces related-post navigation. Missing, empty, malformed,
+or unsafe values produce no control or empty container. No related-post plugin,
+comments, analytics, tag cloud, social widget, remote font, or runtime service
+is required.
+
+## Packaged 404
+
+The wheel owns a generic `templates/404.html`. Pelican resolves it through the
+installed theme loader without copying the template into site content:
+
+```python
+TEMPLATE_PAGES = {"404.html": "404.html"}
+```
+
+The installed-wheel fixture proves that this creates `output/404.html`. The 404
+inherits the one semantic shell and deliberately emits no canonical, Open
+Graph, Twitter, or JSON-LD identity for the missing route.
+
 ## Customization contract
 
-The base exposes 18 stable template-block names, including title, metadata,
+The base continues to expose exactly 18 stable template-block names, including
+title, metadata,
 canonical, structured data, body/page classes, hero, content, and scripts. It
 also provides generic container, button, prose, and status-notice classes. All
 public CSS custom properties are implemented with light values on
@@ -146,12 +220,14 @@ PET_RUN_BROWSER=1 uv run --locked --all-groups \
   pytest -m browser tests/test_browser_acceptance.py
 ```
 
-The browser workflow uploads deterministic minimal/full light and dark
-screenshots at 390×844, 768×1024, and 1440×1000 together with a machine-readable
-case, axe-core accessibility, focus/skip, overflow, no-network, and pre-paint
-timing report. axe-core is an exact, development-only dependency installed from
-`package-lock.json`; it is not bundled in the wheel or source archive. Green
-automation is evidence for review, not user visual acceptance.
+The browser workflow retains every predecessor color-mode and shell case, then
+adds representative index, article, page, taxonomy, archive, and 404 checks at
+390×844, 768×1024, and 1440×1000. It uploads deterministic screenshots together
+with a machine-readable exact-head report covering axe-core, focus/skip,
+overflow, no-network, and pre-paint timing evidence. axe-core is an exact,
+development-only dependency installed from `package-lock.json`; it is not
+bundled in the wheel or source archive. Green automation is evidence for review,
+not user visual acceptance.
 
 ## Non-goals
 
