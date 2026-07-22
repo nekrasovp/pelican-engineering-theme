@@ -374,7 +374,9 @@ def test_theme_color_mode_in_real_chromium(tmp_path: Path) -> None:
     report = {
         "engine": "Chromium",
         "engine_version": browser_version,
-        "source_sha": os.environ.get("GITHUB_SHA", "local-working-tree"),
+        "source_sha": os.environ.get(
+            "PET_SOURCE_SHA", os.environ.get("GITHUB_SHA", "local-working-tree")
+        ),
         "cases": cases,
         "timing": timing,
         "screenshots": screenshots,
