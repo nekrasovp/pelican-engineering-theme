@@ -3,13 +3,11 @@ name: Publish reviewed release
 on:
   release:
     types: [published]
-  # One-shot recovery for v0.1.0. Remove after the protected publish succeeds.
-  workflow_dispatch:
 
 permissions: {}
 
 concurrency:
-  group: release-${{ github.event_name == 'release' && github.event.release.tag_name || 'v0.1.0' }}
+  group: release-${{ github.event.release.tag_name }}
   cancel-in-progress: false
 
 jobs:
@@ -23,11 +21,11 @@ jobs:
       - name: Check out the immutable release tag
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event_name == 'release' && github.event.release.tag_name || 'v0.1.0' }}
+          ref: ${{ github.event.release.tag_name }}
       - name: Prove tag, version, and exact release source
         env:
-          PET_EXPECTED_SOURCE_SHA: ${{ github.event_name == 'release' && github.sha || '463cce15e4b0963420ac0886e0522f4efc0cbf8f' }}
-          PET_RELEASE_TAG: ${{ github.event_name == 'release' && github.event.release.tag_name || 'v0.1.0' }}
+          PET_EXPECTED_SOURCE_SHA: ${{ github.sha }}
+          PET_RELEASE_TAG: ${{ github.event.release.tag_name }}
         shell: bash
         run: |
           actual_source_sha="$(git rev-parse HEAD)"
@@ -62,13 +60,13 @@ jobs:
         env:
           PET_RUN_BROWSER: "1"
           PET_SCREENSHOT_DIR: artifacts/release-browser
-          PET_EXPECTED_SOURCE_SHA: ${{ github.event_name == 'release' && github.sha || '463cce15e4b0963420ac0886e0522f4efc0cbf8f' }}
+          PET_EXPECTED_SOURCE_SHA: ${{ github.sha }}
         run: >-
           uv run --locked --all-groups pytest -m browser
           tests/test_browser_acceptance.py -q
       - name: Build the candidate twice and reject byte drift
         env:
-          PET_EXPECTED_SOURCE_SHA: ${{ github.event_name == 'release' && github.sha || '463cce15e4b0963420ac0886e0522f4efc0cbf8f' }}
+          PET_EXPECTED_SOURCE_SHA: ${{ github.sha }}
         run: >-
           uv run --locked --all-groups python scripts/release_candidate.py build
           --dist dist --report artifacts/release-candidate.json
@@ -102,7 +100,7 @@ jobs:
     timeout-minutes: 5
     environment:
       name: github-release
-      url: ${{ github.event.release.html_url || 'https://github.com/nekrasovp/pelican-engineering-theme/releases/tag/v0.1.0' }}
+      url: ${{ github.event.release.html_url }}
     permissions:
       contents: write
     steps:
@@ -112,7 +110,7 @@ jobs:
           name: theme007-release-candidate-${{ github.sha }}
       - name: Recheck candidate source and hashes
         env:
-          PET_EXPECTED_SOURCE_SHA: ${{ github.event_name == 'release' && github.sha || '463cce15e4b0963420ac0886e0522f4efc0cbf8f' }}
+          PET_EXPECTED_SOURCE_SHA: ${{ github.sha }}
         run: >-
           python scripts/release_candidate.py verify --dist dist
           --report artifacts/release-candidate.json
@@ -120,7 +118,7 @@ jobs:
       - name: Attach without overwriting an existing release asset
         env:
           GH_TOKEN: ${{ github.token }}
-          PET_RELEASE_TAG: ${{ github.event_name == 'release' && github.event.release.tag_name || 'v0.1.0' }}
+          PET_RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: >-
           gh release upload --repo "${GITHUB_REPOSITORY}" "${PET_RELEASE_TAG}"
           dist/*.whl dist/*.tar.gz
@@ -143,7 +141,7 @@ jobs:
           name: theme007-release-candidate-${{ github.sha }}
       - name: Recheck candidate source and hashes
         env:
-          PET_EXPECTED_SOURCE_SHA: ${{ github.event_name == 'release' && github.sha || '463cce15e4b0963420ac0886e0522f4efc0cbf8f' }}
+          PET_EXPECTED_SOURCE_SHA: ${{ github.sha }}
         run: >-
           python scripts/release_candidate.py verify --dist dist
           --report artifacts/release-candidate.json
