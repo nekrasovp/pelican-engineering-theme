@@ -120,7 +120,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           PET_RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: >-
-          gh release upload "${PET_RELEASE_TAG}" dist/*.whl dist/*.tar.gz
+          gh release upload --repo "${GITHUB_REPOSITORY}" "${PET_RELEASE_TAG}"
+          dist/*.whl dist/*.tar.gz
           artifacts/release-candidate.json
 
   publish-pypi:

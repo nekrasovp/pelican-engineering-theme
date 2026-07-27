@@ -71,6 +71,8 @@ def release_policy_errors(text: str) -> list[str]:
         errors.append("GitHub release job must have contents: write only")
     if "gh release upload" not in attach:
         errors.append("GitHub release job must attach the verified candidate")
+    if '--repo "${GITHUB_REPOSITORY}"' not in attach:
+        errors.append("GitHub release upload must identify the repository explicitly")
 
     if "name: pypi" not in publish:
         errors.append("PyPI publication requires pypi environment")
