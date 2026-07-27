@@ -104,6 +104,16 @@ def test_release_policy_rejects_unpinned_action_and_overwrite_bypass() -> None:
     assert any("--clobber" in error for error in errors)
 
 
+def test_release_policy_rejects_implicit_repository_resolution() -> None:
+    workflow = WORKFLOW.read_text(encoding="utf-8").replace(
+        '--repo "${GITHUB_REPOSITORY}"', ""
+    )
+
+    errors = release_policy_errors(workflow)
+
+    assert any("repository explicitly" in error for error in errors)
+
+
 def test_candidate_report_rejects_stale_or_wrong_source(tmp_path: Path) -> None:
     expected = "a" * 40
     report = valid_candidate_report(tmp_path, expected)
