@@ -11,14 +11,6 @@ WORKFLOW = ROOT / ".github/workflows/release.yml"
 PYPI_ACTION_SHA = "ba38be9e461d3875417946c167d0b5f3d385a247"
 EXACT_TAG_REF = "${{ github.event.release.tag_name }}"
 EXACT_RELEASE_SHA = "${{ github.sha }}"
-RECOVERY_TAG_EXPRESSION = (
-    "${{ github.event_name == 'release' && "
-    "github.event.release.tag_name || 'v0.1.0' }}"
-)
-RECOVERY_SHA_EXPRESSION = (
-    "${{ github.event_name == 'release' && github.sha || "
-    "'463cce15e4b0963420ac0886e0522f4efc0cbf8f' }}"
-)
 
 
 def job_block(text: str, job_name: str) -> str:
@@ -35,18 +27,12 @@ def release_policy_errors(text: str) -> list[str]:
     errors: list[str] = []
     trigger_match = re.search(r"(?ms)^on:\n(.*?)(?=^permissions:)", text)
     trigger = "" if trigger_match is None else trigger_match.group(1)
-    expected_trigger = (
-        "release:\n"
-        "    types: [published]\n"
-        "  # One-shot recovery for v0.1.0. Remove after the protected "
-        "publish succeeds.\n"
-        "  workflow_dispatch:"
-    )
-    if trigger.strip() != expected_trigger:
+    if trigger.strip() != "release:\n    types: [published]":
         errors.append("release workflow trigger must be only release: published")
     for forbidden in (
         "push:",
         "pull_request:",
+        "workflow_dispatch:",
         "workflow_run:",
         "schedule:",
         "repository_dispatch:",
@@ -68,8 +54,8 @@ def release_policy_errors(text: str) -> list[str]:
         errors.append("missing publish-pypi job")
 
     required_build = (
-        f"ref: {RECOVERY_TAG_EXPRESSION}",
-        f"PET_EXPECTED_SOURCE_SHA: {RECOVERY_SHA_EXPRESSION}",
+        f"ref: {EXACT_TAG_REF}",
+        f"PET_EXPECTED_SOURCE_SHA: {EXACT_RELEASE_SHA}",
         'actual_source_sha="$(git rev-parse HEAD)"',
         'test "${actual_source_sha}" = "${PET_EXPECTED_SOURCE_SHA}"',
         "python scripts/release_candidate.py build",
