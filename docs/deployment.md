@@ -17,8 +17,8 @@ DELETE_OUTPUT_DIRECTORY = True
 FEED_ALL_ATOM = "feeds/all.atom.xml"
 ```
 
-Build with an exact locked site dependency on a published theme version, or—
-before publication—with a separately verified candidate wheel digest:
+Build with an exact locked site dependency on the published theme version. For
+an unreleased future change, use only a separately verified artifact digest:
 
 ```sh
 python -I -m pelican content -s publishconf.py -o output

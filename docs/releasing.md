@@ -1,8 +1,9 @@
 # Release process
 
-This document prepares future publication; it authorizes nothing by itself.
-The current `0.1.0` files are candidates only. Do not create a tag, GitHub
-Release, TestPyPI/PyPI upload, or deployment without a fresh explicit decision.
+This is the reusable release procedure. Repository text never authorizes a
+release by itself; every release still requires a fresh explicit owner
+decision. The workflow publishes packages only and never deploys a consuming
+site.
 
 ## One-time protected setup
 
@@ -10,8 +11,8 @@ Create these GitHub environments only during an authorized publication task:
 
 | Environment | Required protection | Job permission |
 | --- | --- | --- |
-| `github-release` | Required independent reviewer, prevent self-review, disallow admin bypass, selected tag pattern `v*` | `contents: write` only |
-| `pypi` | Required independent reviewer, prevent self-review, disallow admin bypass, selected tag pattern `v*` | `id-token: write` only |
+| `github-release` | Required owner approval, admin bypass disabled, selected tag pattern `v*` | `contents: write` only |
+| `pypi` | Required owner approval, admin bypass disabled, selected tag pattern `v*` | `id-token: write` only |
 
 Configure the PyPI Trusted Publisher with owner `nekrasovp`, repository
 `pelican-engineering-theme`, workflow `release.yml`, and environment `pypi`.
@@ -30,8 +31,8 @@ No stored PyPI token is permitted.
 2. Review one exact GREEN candidate head and its local/hosted wheel, sdist,
    source SHA, SHA-256 hashes, inventories, installed-artifact builds,
    screenshots, axe, and no-network evidence.
-3. Merge only through independent review. Rerun the same gates on the exact
-   merge SHA.
+3. Merge only after the exact pull-request head is GREEN and explicitly
+   approved for release. Rerun the same gates on the exact merge SHA.
 4. Create one immutable `v0.1.0` tag at that reviewed commit.
 5. Draft release notes from [`0.1.0.md`](release-notes/0.1.0.md), verify the tag
    target, then explicitly publish the GitHub Release.
