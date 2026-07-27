@@ -6,13 +6,12 @@ in [the version policy](docs/versioning.md) and intends to follow
 
 ## Unreleased
 
-- No post-candidate changes.
+- No changes yet.
 
-## 0.1.0 - 2026-07-22 (release candidate; not published)
+## 0.1.0 - 2026-07-27
 
-This entry describes immutable candidate artifacts only. No tag, GitHub
-Release, TestPyPI/PyPI publication, deployment, or released-version validation
-has occurred.
+First public package release. The immutable GitHub and PyPI artifacts are built
+from the same reviewed tag through protected environments and OIDC.
 
 ### Added
 
@@ -30,12 +29,12 @@ has occurred.
   axe-core scans, keyboard/overflow checks, and zero-runtime-network gates.
 - Complete configuration, customization, notebook, accessibility,
   compatibility, versioning, dependency, deployment, contribution, release,
-  and `0.1.0` candidate documentation.
-- README-derived clean onboarding for both exact candidate artifacts,
+  and `0.1.0` release documentation.
+- README-derived clean onboarding for both exact artifacts,
   screenshot provenance validation, deterministic double-build evidence, and
   negative tests for publication gating and wrong/stale source claims.
 - A release-event-only workflow for GitHub Release assets and PyPI Trusted
-  Publishing behind protected environments. The workflow is preparation only.
+  Publishing behind protected environments.
 
 ### Contract status
 

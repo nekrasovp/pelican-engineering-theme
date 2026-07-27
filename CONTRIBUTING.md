@@ -1,8 +1,8 @@
 # Contributing
 
-The `0.1.0` package is a release candidate, not a published distribution.
-Contributions must preserve the generic theme boundary and must not imply that
-PyPI, a production site, or a visual design has been accepted.
+The `0.1.0` package is the first public distribution. Contributions must
+preserve the generic theme boundary and must not imply that a production site
+or a consuming site's visual design has been accepted.
 
 ## Before opening a change
 
@@ -39,7 +39,8 @@ uv run --locked --all-groups python scripts/verify_distribution.py dist
 
 Run `scripts/verify_external_install.py` against the built wheel and
 `scripts/verify_readme_onboarding.py` separately against the wheel and sdist.
-These checks prove exact local/CI candidate artifacts; they are not PyPI tests.
+These checks prove exact local/CI artifacts; post-release verification
+separately compares the public PyPI files with the reviewed hashes.
 
 Presentation changes also require:
 

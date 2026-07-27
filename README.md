@@ -1,27 +1,24 @@
 # pelican-engineering-theme
 
-> Release status: `0.1.0` is a reviewed release candidate, not a published
-> package. There is no tag, GitHub Release, TestPyPI/PyPI upload, or production
-> deployment yet. Install the exact locally built candidate artifact for
-> evaluation; do not claim a PyPI installation until publication is separately
-> authorized and completed.
+> Release status: `0.1.0` is the first public package release. Its GitHub tag,
+> release assets, and PyPI files are produced from one reviewed commit by the
+> protected OIDC publication workflow. This package does not deploy or change
+> any consuming site.
 
 A reusable, accessibility-conscious Pelican theme for technical writers who
 publish long-form articles, code, and trusted static notebook output. The
 theme is intentionally generic: it contains no publisher-specific content,
 analytics, remote fonts, runtime services, or notebook execution.
 
-## Quick start from this candidate
+## Quick start
 
-Prerequisites: Git, Python 3.11-3.13, and
-[`uv`](https://docs.astral.sh/uv/getting-started/installation/). From a clean
-checkout, build and install the exact candidate wheel:
+Prerequisite: Python 3.11-3.13. Create an isolated environment and install the
+exact first release:
 
 ```sh
-uv build
-uv venv .quickstart-venv
-uv pip install --python .quickstart-venv/bin/python \
-  dist/pelican_engineering_theme-0.1.0-py3-none-any.whl
+python -m venv .quickstart-venv
+.quickstart-venv/bin/python -m pip install \
+  pelican-engineering-theme==0.1.0
 mkdir -p quickstart/content
 ```
 
@@ -53,7 +50,7 @@ Date: 2026-07-22
 Category: Notes
 Tags: example
 Slug: small-technical-note
-Summary: A generic page built with the installed candidate artifact.
+Summary: A generic page built with the installed theme package.
 
 # A verifiable first build
 
@@ -71,10 +68,9 @@ test -f output/theme/css/scaffold.css
 ```
 
 The package test suite extracts the two marked file blocks from this README,
-installs the exact candidate wheel or sdist in a new environment, and performs
-this build away from the checkout. `pip install pelican-engineering-theme` is
-future release syntax only and is deliberately not part of the current quick
-start.
+installs the exact wheel or sdist in a new environment, and performs this build
+away from the checkout. The public release workflow separately proves that the
+GitHub and PyPI files have the same reviewed hashes.
 
 ## Representative example
 
